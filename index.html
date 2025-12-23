@@ -2,273 +2,220 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Hera English School – Online MCQs</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Online Exam System</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<!-- Firebase -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<!-- Libraries for Export -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <style>
-body{font-family:Arial;background:#f4f6fb;margin:0}
-.container{max-width:950px;margin:auto;padding:15px}
-.card{background:#fff;padding:20px;border-radius:12px;margin-bottom:20px;box-shadow:0 4px 15px rgba(0,0,0,.1)}
-h2,h3{text-align:center;color:#2d5be3}
-input,textarea,select,button{
-width:100%;padding:10px;margin:6px 0;border-radius:6px;border:1px solid #ccc;font-size:15px}
-button{background:#2d5be3;color:white;border:none;cursor:pointer}
-button:hover{opacity:.9}
-.hidden{display:none}
-.palette span{
-display:inline-block;width:36px;height:36px;line-height:36px;
-margin:4px;border-radius:50%;background:#ddd;cursor:pointer}
-.palette .done{background:#2d5be3;color:white}
-.options label{
-display:block;padding:8px;border:1px solid #ccc;margin:6px 0;
-border-radius:6px;cursor:pointer}
-.timer{font-size:18px;font-weight:bold;color:red;text-align:center}
-.toast{
-position:fixed;bottom:20px;right:20px;
-background:#333;color:white;padding:12px 18px;
-border-radius:6px;display:none}
+body {
+  font-family: Arial, sans-serif;
+  background: #eef2f7;
+  margin: 0;
+}
+.container {
+  max-width: 900px;
+  background: #fff;
+  margin: 15px auto;
+  padding: 15px;
+  border-radius: 8px;
+}
+h2 { text-align: center; color: #2c3e50; }
+input, textarea, button {
+  width: 100%;
+  padding: 10px;
+  margin-top: 8px;
+  font-size: 16px;
+}
+button {
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+}
+button:hover { background: #1e40af; }
+.hidden { display: none; }
+.question-box {
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 12px;
+  margin-top: 12px;
+}
+.timer {
+  text-align: center;
+  font-size: 18px;
+  color: red;
+  margin-bottom: 10px;
+}
+.option { margin: 6px 0; }
+@media(max-width:600px){
+  h2 { font-size: 20px; }
+}
 </style>
 </head>
 
 <body>
-<div class="container">
 
-<h2>Hera English School – Online MCQs</h2>
-
-<!-- TEACHER LOGIN -->
-<div class="card" id="loginCard">
-<h3>Teacher Login</h3>
-<input id="tUser" placeholder="Username">
-<input id="tPass" type="password" placeholder="Password">
-<button onclick="teacherLogin()">Login</button>
+<!-- LOGIN -->
+<div class="container" id="loginPanel">
+<h2>🔐 Login</h2>
+<input id="username" placeholder="Username">
+<input id="password" type="password" placeholder="Password">
+<button onclick="login()">Login</button>
+<p><b>Admin:</b> admin / admin123</p>
+<p><b>Teacher:</b> teacher / teacher123</p>
 </div>
 
 <!-- TEACHER PANEL -->
-<div class="card hidden" id="teacherPanel">
-<h3>Teacher Panel</h3>
-<button onclick="logout()">Logout</button>
+<div class="container hidden" id="teacherPanel">
+<h2>👨‍🏫 Teacher Panel</h2>
 
-<input id="teacherName" placeholder="Teacher Name">
 <input id="testName" placeholder="Test Name">
+<input id="testDuration" type="number" value="30" min="5">
 
-<textarea id="questionsBox" rows="8"
-placeholder="Question |
-option1 |
-option2 |
-option3 |
-option4 |
-correctIndex (0-based)"></textarea>
+<textarea id="questionInput" rows="8"
+placeholder="Question | opt1 | opt2 | opt3 | opt4 | correctIndex"></textarea>
 
-<button onclick="saveTest()">Save / Update Test</button>
-
-<h4>All Tests</h4>
-<div id="testsList"></div>
-
-<h4>Student Attempts</h4>
-<div id="attempts"></div>
+<button onclick="saveTest()">Save Test</button>
+<button onclick="startStudent()">Open Student Test</button>
+<button onclick="exportExcel()">Export Result (Excel)</button>
+<button onclick="exportPDF()">Export Result (PDF)</button>
 </div>
 
 <!-- STUDENT PANEL -->
-<div class="card">
-<h3>Student Panel</h3>
-<input id="studentName" placeholder="Student Name">
-<input id="studentClass" placeholder="Class">
-<select id="testSelect"></select>
-<button onclick="startTest()">Start Test</button>
-</div>
-
-<!-- EXAM -->
-<div class="card hidden" id="exam">
+<div class="container hidden" id="studentPanel">
+<h2>👨‍🎓 Student Test</h2>
 <div class="timer" id="timer"></div>
-<div class="palette" id="palette"></div>
-<h3 id="qText"></h3>
-<div class="options" id="options"></div>
-<button onclick="prevQ()">Previous</button>
-<button id="nextBtn" onclick="nextQ()">Next</button>
-<button onclick="submitTest()">Submit</button>
+<div id="questionsArea"></div>
+<button onclick="submitTest()">Submit Test</button>
 </div>
-
-</div>
-
-<div class="toast" id="toast"></div>
 
 <script>
-/* ================= FIREBASE ================= */
-const firebaseConfig = {
-  apiKey: "AIzaSyChhkiu5e6fKVowh2RRvkegVdTwn7yV8Zc",
-  authDomain: "hera-mcqs.firebaseapp.com",
-  projectId: "hera-mcqs",
-  storageBucket: "hera-mcqs.firebasestorage.app",
-  messagingSenderId: "284002289050",
-  appId: "1:284002289050:web:e98f219b72f5c7cc3c6623"
-};
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
+let role = "";
+let testData = {};
+let studentAnswers = {};
+let studentQuestions = [];
+let results = [];
+let timerInterval;
 
-/* ================= CONFIG ================= */
-const TEACHER_USER="hera";
-const TEACHER_PASS="12345";
-const EXAM_TIME=30*60;
+// LOGIN
+function login() {
+  const u = username.value;
+  const p = password.value;
 
-/* ================= UTIL ================= */
-function toast(msg){
-  const t=document.getElementById("toast");
-  t.innerText=msg; t.style.display="block";
-  setTimeout(()=>t.style.display="none",3000);
+  if (u === "admin" && p === "admin123") role = "admin";
+  else if (u === "teacher" && p === "teacher123") role = "teacher";
+  else return alert("Invalid login");
+
+  loginPanel.classList.add("hidden");
+  teacherPanel.classList.remove("hidden");
 }
 
-/* ================= TEACHER ================= */
-let editId=null;
+// SAVE TEST
+function saveTest() {
+  const raw = questionInput.value.trim();
+  if (!raw) return alert("Add questions");
 
-function teacherLogin(){
-  if(tUser.value===TEACHER_USER && tPass.value===TEACHER_PASS){
-    loginCard.classList.add("hidden");
-    teacherPanel.classList.remove("hidden");
-    loadTests();
-  }else alert("Wrong login");
+  testData = {
+    name: testName.value,
+    duration: parseInt(testDuration.value),
+    questions: raw.split("\n").filter(q => q.trim())
+  };
+  alert("Test saved");
 }
 
-function logout(){
+// START STUDENT
+function startStudent() {
+  if (!testData.questions) return alert("Save test first");
+
+  teacherPanel.classList.add("hidden");
+  studentPanel.classList.remove("hidden");
+
+  studentAnswers = {};
+  studentQuestions = shuffle([...testData.questions]).slice(0, 30);
+  renderStudent();
+  startTimer(testData.duration);
+}
+
+// PARSE
+function parseQ(raw) {
+  const p = raw.split("|").map(x => x.trim());
+  return { q: p[0], opts: p.slice(1,5), ans: parseInt(p[5]) };
+}
+
+// RENDER STUDENT
+function renderStudent() {
+  questionsArea.innerHTML = "";
+  studentQuestions.forEach((raw, i) => {
+    const q = parseQ(raw);
+    const div = document.createElement("div");
+    div.className = "question-box";
+    div.innerHTML = `<b>Q${i+1}. ${q.q}</b>`;
+    q.opts = shuffle(q.opts);
+    q.opts.forEach((o, idx) => {
+      div.innerHTML += `
+      <div class="option">
+        <label>
+          <input type="radio" name="q${i}" value="${o}"
+           onchange="studentAnswers[${i}]='${o}'"> ${o}
+        </label>
+      </div>`;
+    });
+    questionsArea.appendChild(div);
+  });
+}
+
+// TIMER
+function startTimer(min) {
+  let t = min * 60;
+  timerInterval = setInterval(() => {
+    timer.innerText = `Time Left: ${Math.floor(t/60)}:${(t%60).toString().padStart(2,'0')}`;
+    if (t-- <= 0) submitTest();
+  },1000);
+}
+
+// SUBMIT
+function submitTest() {
+  clearInterval(timerInterval);
+  let score = 0;
+
+  studentQuestions.forEach((raw,i)=>{
+    const q = parseQ(raw);
+    if (studentAnswers[i] === q.opts[q.ans]) score++;
+  });
+
+  results.push({ Test: testData.name, Score: score });
+  alert("Test Submitted! Score: " + score);
   location.reload();
 }
 
-async function saveTest(){
-  if(!testName.value || !questionsBox.value){alert("Fill all");return;}
-  const data={
-    teacher:teacherName.value,
-    name:testName.value,
-    questions:questionsBox.value
-  };
-  if(editId){
-    await db.collection("tests").doc(editId).set(data);
-    editId=null;
-    toast("Test Updated");
-  }else{
-    await db.collection("tests").add(data);
-    toast("Test Saved");
-  }
-  questionsBox.value=""; testName.value="";
+// SHUFFLE
+function shuffle(arr) {
+  return arr.sort(() => Math.random() - 0.5);
 }
 
-function loadTests(){
-db.collection("tests").onSnapshot(s=>{
-testsList.innerHTML=""; testSelect.innerHTML="";
-s.forEach(d=>{
-const t=d.data();
-testsList.innerHTML+=`
-<div>
-<b>${t.name}</b>
-<button onclick="editTest('${d.id}')">Edit</button>
-<button onclick="delTest('${d.id}')">Delete</button>
-</div>`;
-testSelect.innerHTML+=`<option value="${d.id}">${t.name}</option>`;
-});
-});
+// EXPORT EXCEL
+function exportExcel() {
+  const ws = XLSX.utils.json_to_sheet(results);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Results");
+  XLSX.writeFile(wb, "results.xlsx");
 }
 
-async function editTest(id){
-const d=await db.collection("tests").doc(id).get();
-const t=d.data();
-teacherName.value=t.teacher;
-testName.value=t.name;
-questionsBox.value=t.questions;
-editId=id;
+// EXPORT PDF
+function exportPDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  let y = 10;
+  results.forEach((r,i)=>{
+    doc.text(`${i+1}. ${r.Test} - Score: ${r.Score}`, 10, y);
+    y += 10;
+  });
+  doc.save("results.pdf");
 }
-
-function delTest(id){
-if(confirm("Delete test?"))
-db.collection("tests").doc(id).delete();
-}
-
-/* ================= STUDENT ================= */
-let questions=[],answers=[],index=0,timeLeft,interval;
-
-async function startTest(){
-const doc=await db.collection("tests").doc(testSelect.value).get();
-const lines=doc.data().questions.split("\n").map(l=>l.trim()).filter(l=>l);
-questions=[];
-for(let i=0;i<lines.length;i+=6){
-questions.push({
-q:lines[i],
-opts:[lines[i+1],lines[i+2],lines[i+3],lines[i+4]],
-correct:Number(lines[i+5])
-});
-}
-questions=questions.sort(()=>0.5-Math.random()).slice(0,30);
-answers=Array(questions.length).fill(null);
-index=0;
-exam.classList.remove("hidden");
-startTimer();
-showQ();
-}
-
-function showQ(){
-const q=questions[index];
-qText.innerText=`Q${index+1}. ${q.q}`;
-options.innerHTML="";
-q.opts.forEach((o,i)=>{
-options.innerHTML+=`
-<label>
-<input type="radio" name="opt"
-${answers[index]==i?"checked":""}
-onclick="answers[${index}]=${i};drawPalette()">
-${o}</label>`;
-});
-drawPalette();
-nextBtn.style.display=index==questions.length-1?"none":"inline-block";
-}
-
-function drawPalette(){
-palette.innerHTML="";
-answers.forEach((a,i)=>{
-palette.innerHTML+=`
-<span class="${a!==null?"done":""}"
-onclick="index=${i};showQ()">${i+1}</span>`;
-});
-}
-
-function nextQ(){if(index<questions.length-1){index++;showQ();}}
-function prevQ(){if(index>0){index--;showQ();}}
-
-function startTimer(){
-timeLeft=EXAM_TIME;
-interval=setInterval(()=>{
-let m=Math.floor(timeLeft/60);
-let s=timeLeft%60;
-timer.innerText=`Time Left: ${m}:${s<10?"0":""}${s}`;
-if(--timeLeft<0){clearInterval(interval);submitTest();}
-},1000);
-}
-
-async function submitTest(){
-clearInterval(interval);
-let score=0;
-questions.forEach((q,i)=>{if(answers[i]==q.correct)score++;});
-await db.collection("attempts").add({
-name:studentName.value,
-class:studentClass.value,
-test:testSelect.options[testSelect.selectedIndex].text,
-score, total:questions.length,
-time:new Date().toLocaleString()
-});
-toast(`Submitted: ${score}/${questions.length}`);
-exam.classList.add("hidden");
-}
-
-db.collection("attempts").orderBy("time","desc")
-.onSnapshot(s=>{
-attempts.innerHTML="";
-s.forEach(d=>{
-const a=d.data();
-attempts.innerHTML+=`
-<div>${a.name} (${a.class}) – ${a.test}
- : ${a.score}/${a.total}</div>`;
-});
-});
 </script>
+
 </body>
 </html>
