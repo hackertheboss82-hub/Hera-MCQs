@@ -2,74 +2,89 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Hera MCQs</title>
+<title>Hera English School – Online MCQs</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
 <style>
 body{
-  font-family: Arial, sans-serif;
-  background:#f1f5ff;
   margin:0;
+  font-family:Segoe UI,Arial;
+  background:#eef2ff;
 }
 .container{
   max-width:900px;
   margin:auto;
-  padding:15px;
+  padding:20px;
 }
 .card{
   background:#fff;
+  border:2px solid #c7d2fe;
+  border-radius:16px;
   padding:20px;
-  border-radius:14px;
   margin-bottom:25px;
-  border:2px solid #dbe4ff;
   box-shadow:0 10px 25px rgba(0,0,0,.08);
 }
-h2,h3{text-align:center;color:#1e40af}
+h2,h3{
+  text-align:center;
+  color:#1e40af;
+}
 input,textarea,select,button{
   width:100%;
   padding:12px;
   margin:8px 0;
+  font-size:15px;
   border-radius:10px;
   border:1px solid #c7d2fe;
-  font-size:15px;
 }
 button{
   background:#2d5be3;
   color:#fff;
   border:none;
-  cursor:pointer;
   font-weight:600;
+  cursor:pointer;
 }
 button:hover{background:#1e40af}
 .hidden{display:none}
 
+/* Exam */
 .options label{
   display:block;
   padding:12px;
-  border:1px solid #c7d2fe;
   margin:8px 0;
   border-radius:10px;
-  cursor:pointer;
+  border:1px solid #c7d2fe;
   background:#f8faff;
+  cursor:pointer;
 }
-
+.options input{margin-right:10px}
 .palette span{
   display:inline-block;
-  width:34px;
-  height:34px;
-  line-height:34px;
+  width:36px;
+  height:36px;
+  line-height:36px;
   margin:4px;
   border-radius:50%;
   background:#e0e7ff;
-  cursor:pointer;
+  text-align:center;
   font-weight:600;
+  cursor:pointer;
 }
 .palette .done{
   background:#2d5be3;
-  color:white;
+  color:#fff;
 }
-.nav{display:flex;gap:10px}
-@media(max-width:600px){.nav{flex-direction:column}}
+.nav{
+  display:flex;
+  gap:10px;
+  margin-top:15px;
+}
+@media(max-width:600px){
+  .nav{flex-direction:column}
+}
 </style>
 </head>
 
@@ -81,21 +96,21 @@ button:hover{background:#1e40af}
 <!-- TEACHER LOGIN -->
 <div class="card" id="teacherLogin">
 <h3>🔐 Teacher Login</h3>
-<input type="password" id="teacherPass" placeholder="Enter Teacher Password">
-<button onclick="teacherLogin()">Login</button>
+<input type="password" id="teacherPassword" placeholder="Teacher Password">
+<button onclick="loginTeacher()">Login</button>
 </div>
 
 <!-- TEACHER PANEL -->
 <div class="card hidden" id="teacherPanel">
 <h3>👩‍🏫 Teacher Panel</h3>
 
-<input id="testTitle" placeholder="Test Title">
+<input id="testName" placeholder="Test Name">
 
-<textarea id="qText" placeholder="Question"></textarea>
-<input id="o1" placeholder="Option A">
-<input id="o2" placeholder="Option B">
-<input id="o3" placeholder="Option C">
-<input id="o4" placeholder="Option D">
+<textarea id="questionText" placeholder="Question"></textarea>
+<input id="a" placeholder="Option A">
+<input id="b" placeholder="Option B">
+<input id="c" placeholder="Option C">
+<input id="d" placeholder="Option D">
 
 <select id="correct">
   <option value="0">Correct: A</option>
@@ -105,9 +120,10 @@ button:hover{background:#1e40af}
 </select>
 
 <button onclick="addQuestion()">Add Question</button>
-<button onclick="saveTest()">Save Test</button>
+<button onclick="saveTest()">Save / Update Test</button>
 
-<div id="teacherList"></div>
+<h4>Questions Added</h4>
+<div id="questionList"></div>
 </div>
 
 <!-- STUDENT PANEL -->
@@ -117,25 +133,21 @@ button:hover{background:#1e40af}
 
 <div id="exam" class="hidden">
 <div class="palette" id="palette"></div>
-<h3 id="qNo"></h3>
-<p id="question"></p>
+<h3 id="qTitle"></h3>
 <div class="options" id="options"></div>
 
 <div class="nav">
-<button onclick="prevQ()">Previous</button>
-<button id="nextBtn" onclick="nextQ()">Next</button>
-<button onclick="submitExam()">Submit</button>
+<button onclick="prev()">Previous</button>
+<button id="nextBtn" onclick="next()">Next</button>
+<button onclick="submit()">Submit</button>
 </div>
 </div>
 </div>
 
 </div>
-
-<!-- FIREBASE -->
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
 <script>
+/* ---------- FIREBASE ---------- */
 const firebaseConfig = {
   apiKey: "AIzaSyChhkiu5e6fKVowh2RRvkegVdTwn7yV8Zc",
   authDomain: "hera-mcqs.firebaseapp.com",
@@ -147,82 +159,90 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-/* PASSWORD */
-const TEACHER_PASSWORD = "hera@123";
+/* ---------- TEACHER ---------- */
+const PASSWORD = "hera@123";
+let questions = [];
 
-function teacherLogin(){
-  if(teacherPass.value === TEACHER_PASSWORD){
-    teacherLoginDiv.style.display="none";
+function loginTeacher(){
+  if(teacherPassword.value === PASSWORD){
+    teacherLogin.classList.add("hidden");
     teacherPanel.classList.remove("hidden");
   }else{
-    alert("Wrong Password");
+    alert("Wrong password");
   }
 }
 
-const teacherLoginDiv=document.getElementById("teacherLogin");
-const teacherPanel=document.getElementById("teacherPanel");
-
-/* TEACHER */
-let questions=[];
 function addQuestion(){
   questions.push({
-    q:qText.value,
-    o:[o1.value,o2.value,o3.value,o4.value],
-    c:correct.value
+    q:questionText.value,
+    o:[a.value,b.value,c.value,d.value],
+    c:Number(correct.value)
   });
-  qText.value=o1.value=o2.value=o3.value=o4.value="";
-  loadTeacherList();
-}
-function loadTeacherList(){
-  teacherList.innerHTML="";
-  questions.forEach((q,i)=>{
-    teacherList.innerHTML+=`<p>${i+1}. ${q.q}</p>`;
-  });
-}
-function saveTest(){
-  db.collection("tests").doc("latest").set({questions});
-  alert("Test Saved");
+  questionText.value=a.value=b.value=c.value=d.value="";
+  renderTeacherList();
 }
 
-/* STUDENT */
-let examQ=[],answers={},index=0;
+function renderTeacherList(){
+  questionList.innerHTML="";
+  questions.forEach((q,i)=>{
+    questionList.innerHTML+=`<p>${i+1}. ${q.q}</p>`;
+  });
+}
+
+function saveTest(){
+  db.collection("tests").doc("active").set({questions});
+  alert("Test saved");
+}
+
+/* ---------- STUDENT ---------- */
+let examQ=[], ans=[], idx=0;
 
 function startExam(){
-  db.collection("tests").doc("latest").get().then(d=>{
-    examQ=shuffle(d.data().questions).slice(0,30);
-    index=0;answers={};
+  db.collection("tests").doc("active").get().then(doc=>{
+    examQ = shuffle(doc.data().questions).slice(0,30);
+    ans = Array(examQ.length).fill(null);
+    idx = 0;
     exam.classList.remove("hidden");
-    loadQ();
+    showQ();
   });
 }
 
-function loadQ(){
-  let q=examQ[index];
-  qNo.innerText=`Question ${index+1} of ${examQ.length}`;
-  question.innerText=q.q;
+function showQ(){
+  const q = examQ[idx];
+  qTitle.innerText = `Q${idx+1}. ${q.q}`;
   options.innerHTML="";
   q.o.forEach((op,i)=>{
     options.innerHTML+=`
     <label>
-      <input type="radio" name="opt" ${answers[index]==i?"checked":""}
-      onclick="answers[${index}]=${i}">
+      <input type="radio" name="opt" ${ans[idx]===i?"checked":""}
+      onclick="ans[${idx}]=${i};drawPalette()">
       ${op}
     </label>`;
   });
-  palette.innerHTML="";
-  examQ.forEach((_,i)=>{
-    palette.innerHTML+=`<span class="${answers[i]!=null?'done':''}" onclick="jump(${i})">${i+1}</span>`;
-  });
-  nextBtn.style.display = index===examQ.length-1 ? "none":"block";
+  drawPalette();
+  nextBtn.style.display = idx===examQ.length-1 ? "none" : "block";
 }
-function nextQ(){if(index<examQ.length-1){index++;loadQ()}}
-function prevQ(){if(index>0){index--;loadQ()}}
-function jump(i){index=i;loadQ()}
-function submitExam(){
-  alert("Test Submitted");
+
+function drawPalette(){
+  palette.innerHTML="";
+  ans.forEach((v,i)=>{
+    palette.innerHTML+=`<span class="${v!==null?'done':''}"
+    onclick="idx=${i};showQ()">${i+1}</span>`;
+  });
+}
+
+function next(){ if(idx<examQ.length-1){idx++;showQ();}}
+function prev(){ if(idx>0){idx--;showQ();}}
+
+function submit(){
+  let score=0;
+  examQ.forEach((q,i)=>{ if(ans[i]===q.c) score++; });
+  alert(`Test Submitted\nScore: ${score}/${examQ.length}`);
   exam.classList.add("hidden");
 }
-function shuffle(a){return a.sort(()=>Math.random()-0.5)}
+
+function shuffle(a){ return [...a].sort(()=>Math.random()-0.5); }
 </script>
+
 </body>
 </html>
