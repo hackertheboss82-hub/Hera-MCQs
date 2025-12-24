@@ -1,204 +1,247 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
 <title>Online Exam System</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
 <style>
-body{font-family:Arial;background:#f4f6f8;margin:0}
-.container{max-width:1000px;margin:auto;padding:15px}
-.card{background:#fff;padding:15px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.1)}
-h2{text-align:center}
-input,textarea,button,select{width:100%;padding:10px;margin:6px 0;border-radius:5px;border:1px solid #ccc}
-button{background:#2563eb;color:#fff;border:none;font-size:16px}
-table{width:100%;border-collapse:collapse;margin-top:10px}
-th,td{border:1px solid #ccc;padding:8px;text-align:center}
-.timer{text-align:right;font-weight:bold}
-.option{border:1px solid #ccc;padding:8px;margin:6px 0;border-radius:5px}
-.option.selected{background:#2563eb;color:#fff}
+body{font-family:Arial;background:#eef2f5;margin:0}
+.box{max-width:1000px;margin:20px auto;background:#fff;padding:20px;border-radius:8px}
+button{padding:10px 15px;margin:5px;font-size:16px}
+input,textarea,select{width:100%;padding:10px;margin:5px 0}
 .hidden{display:none}
+.question{border:1px solid #ccc;padding:10px;margin:10px 0;border-radius:5px}
+.correct{color:green;font-weight:bold}
+.wrong{color:red;font-weight:bold}
+#timer{font-size:18px;color:red;text-align:right}
+table{width:100%;border-collapse:collapse}
+td,th{border:1px solid #ccc;padding:8px;text-align:center}
 </style>
 </head>
+
 <body>
 
-<div class="container">
-
-<!-- LOGIN -->
-<div id="login" class="card">
-<h2>🔐 Login</h2>
-<input id="user" placeholder="Username (admin/teacher OR student)">
-<input id="pass" type="password" placeholder="Password (leave empty for student)">
-<button onclick="login()">Login</button>
-<p><b>Admin:</b> admin / admin123<br>
-<b>Teacher:</b> teacher / teacher123<br>
-<b>Student:</b> Enter name only</p>
+<div class="box" id="menu">
+<h2>Login As</h2>
+<button onclick="showStudent()">Student</button>
+<button onclick="showTeacher()">Teacher</button>
+<button onclick="showAdmin()">Admin</button>
 </div>
 
-<!-- STUDENT INFO -->
-<div id="studentInfo" class="card hidden">
-<h2>👨‍🎓 Student Details</h2>
+<!-- STUDENT LOGIN -->
+<div class="box hidden" id="studentLogin">
+<h2>Student Login</h2>
 <input id="sname" placeholder="Student Name">
-<input id="sroll" placeholder="Roll / ID">
-<button onclick="startStudent()">Start Test</button>
+<input id="sroll" placeholder="Roll Number">
+<button onclick="studentLogin()">Enter</button>
+<button onclick="back()">Back</button>
+</div>
+
+<!-- TEACHER LOGIN -->
+<div class="box hidden" id="teacherLogin">
+<h2>Teacher Login</h2>
+<input id="tpin" type="password" placeholder="Teacher PIN">
+<button onclick="teacherEnter()">Enter</button>
+<button onclick="back()">Back</button>
+</div>
+
+<!-- ADMIN LOGIN -->
+<div class="box hidden" id="adminLogin">
+<h2>Admin Login</h2>
+<input id="apin" type="password" placeholder="Admin PIN">
+<button onclick="adminEnter()">Enter</button>
+<button onclick="back()">Back</button>
 </div>
 
 <!-- TEACHER PANEL -->
-<div id="teacher" class="card hidden">
-<h2>👨‍🏫 Teacher Panel</h2>
-
-<label>Test Name</label>
-<input id="testName">
-
-<label>Duration (minutes)</label>
-<input id="duration" type="number" value="30">
-
-<label>Bulk Questions</label>
-<textarea id="questions" rows="6"
-placeholder="Question | opt1 | opt2 | opt3 | opt4 | correctIndex"></textarea>
-
+<div class="box hidden" id="teacherPanel">
+<h2>Create Test</h2>
+<input id="testName" placeholder="Test Name">
+<input id="testTime" type="number" placeholder="Time (minutes)">
+<textarea id="testQuestions" rows="12"
+placeholder="Question |
+Option1 |
+Option2 |
+Option3 |
+Option4 |
+CorrectIndex (0-3)"></textarea>
 <button onclick="saveTest()">Save Test</button>
 
-<h3>📊 Student Attempts</h3>
+<h3>Student Attempts</h3>
 <table>
-<thead>
-<tr><th>Name</th><th>Roll</th><th>Score</th><th>Total</th><th>Date</th></tr>
-</thead>
-<tbody id="resultTable"></tbody>
+<thead><tr><th>Name</th><th>Roll</th><th>Test</th><th>Score</th></tr></thead>
+<tbody id="attemptTable"></tbody>
 </table>
 
-<button onclick="exportCSV()">Export Excel</button>
-<button onclick="window.print()">Export PDF</button>
-<button onclick="logout()">Logout</button>
+<button onclick="back()">Logout</button>
 </div>
 
-<!-- STUDENT EXAM -->
-<div id="studentExam" class="card hidden">
-<div class="timer" id="timer"></div>
-<h2 id="qText"></h2>
-<div id="opts"></div>
-<button onclick="nextQ()">Next</button>
+<!-- STUDENT DASH -->
+<div class="box hidden" id="studentDash">
+<h2>Select Test</h2>
+<select id="testList"></select>
+<button onclick="startTest()">Start Test</button>
+</div>
+
+<!-- EXAM -->
+<div class="box hidden" id="examBox">
+<div id="timer"></div>
+<h2>Exam</h2>
+<div id="exam"></div>
+<button onclick="submitTest()">Submit</button>
 </div>
 
 <!-- RESULT -->
-<div id="result" class="card hidden">
-<h2>✅ Test Submitted</h2>
-<p id="finalScore"></p>
-</div>
-
+<div class="box hidden" id="resultBox">
+<h2>Result</h2>
+<div id="result"></div>
+<button onclick="location.reload()">Finish</button>
 </div>
 
 <script>
-let role="",test={},qs=[],i=0,ans=[];
-let student={},timeLeft,timerInt;
+// 🔥 FIREBASE CONFIG
+const firebaseConfig = {
+  apiKey: "PASTE_HERE",
+  authDomain: "PASTE_HERE",
+  databaseURL: "PASTE_HERE",
+  projectId: "PASTE_HERE"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
 
-function login(){
-  let u=user.value,p=pass.value;
-  if((u==="admin"&&p==="admin123")||(u==="teacher"&&p==="teacher123")){
-    role="teacher";
-    login.classList.add("hidden");
-    teacher.classList.remove("hidden");
-    loadResults();
-  }else{
-    role="student";
-    login.classList.add("hidden");
-    studentInfo.classList.remove("hidden");
-  }
+// 🔐 PINS
+const TEACHER_PIN="1234";
+const ADMIN_PIN="9999";
+
+let student={}, allQuestions=[], examQuestions=[];
+let examTimer, timeLeft, currentTest="";
+
+// UI
+function hideAll(){document.querySelectorAll('.box').forEach(b=>b.classList.add('hidden'))}
+function back(){location.reload()}
+function showStudent(){hideAll();studentLogin.classList.remove('hidden')}
+function showTeacher(){hideAll();teacherLogin.classList.remove('hidden')}
+function showAdmin(){hideAll();adminLogin.classList.remove('hidden')}
+
+// STUDENT
+function studentLogin(){
+if(!sname.value||!sroll.value){alert("Enter details");return;}
+student={name:sname.value,roll:sroll.value};
+hideAll();studentDash.classList.remove('hidden');loadTests();
 }
 
-function logout(){location.reload()}
+// TEACHER
+function teacherEnter(){
+if(tpin.value===TEACHER_PIN){
+hideAll();teacherPanel.classList.remove('hidden');
+loadAttempts();
+}else alert("Wrong PIN");
+}
 
+// ADMIN
+function adminEnter(){
+if(apin.value===ADMIN_PIN) alert("Admin logged");
+else alert("Wrong PIN");
+}
+
+// SAVE TEST
 function saveTest(){
-  let qLines=questions.value.trim().split("\n");
-  let qArr=qLines.map(l=>{
-    let p=l.split("|").map(x=>x.trim());
-    return {q:p[0],o:p.slice(1,5),c:+p[5]}
-  });
-  localStorage.setItem("test",JSON.stringify({
-    name:testName.value,
-    duration:+duration.value,
-    questions:qArr
-  }));
-  alert("Test saved");
+let lines=testQuestions.value.trim().split('\n');
+let q=[];
+for(let i=0;i<lines.length;i+=6){
+q.push({q:lines[i],o:[lines[i+1],lines[i+2],lines[i+3],lines[i+4]],a:parseInt(lines[i+5])});
+}
+db.ref("tests/"+testName.value).set({time:testTime.value,questions:q});
+alert("Test saved");
 }
 
-function startStudent(){
-  student={name:sname.value,roll:sroll.value};
-  test=JSON.parse(localStorage.getItem("test"));
-  qs=shuffle([...test.questions]);
-  studentInfo.classList.add("hidden");
-  studentExam.classList.remove("hidden");
-  timeLeft=test.duration*60;
-  timerInt=setInterval(runTimer,1000);
-  showQ();
+// LOAD TESTS
+function loadTests(){
+db.ref("tests").once("value",snap=>{
+testList.innerHTML="";
+snap.forEach(s=>{
+let o=document.createElement("option");
+o.value=s.key;o.text=s.key;
+testList.appendChild(o);
+});
+});
 }
 
-function runTimer(){
-  let m=Math.floor(timeLeft/60),s=timeLeft%60;
-  timer.innerText=`⏱ ${m}:${s.toString().padStart(2,"0")}`;
-  if(timeLeft--<=0) finish();
+// START TEST
+function startTest(){
+db.ref("tests/"+testList.value).once("value",snap=>{
+let data=snap.val();
+currentTest=testList.value;
+allQuestions=data.questions;
+timeLeft=data.time*60;
+examQuestions=shuffle(allQuestions).slice(0,30);
+showExam();
+startTimer();
+});
 }
 
-function showQ(){
-  let q=qs[i];
-  qText.innerText=(i+1)+". "+q.q;
-  opts.innerHTML="";
-  q.o.forEach((o,idx)=>{
-    let d=document.createElement("div");
-    d.className="option";
-    d.innerText=o;
-    d.onclick=()=>{
-      ans[i]=idx;
-      document.querySelectorAll(".option").forEach(x=>x.classList.remove("selected"));
-      d.classList.add("selected");
-    }
-    opts.appendChild(d);
-  });
+// TIMER
+function startTimer(){
+timer.innerText="Time: "+format(timeLeft);
+examTimer=setInterval(()=>{
+timeLeft--;
+timer.innerText="Time: "+format(timeLeft);
+if(timeLeft<=0){clearInterval(examTimer);submitTest();}
+},1000);
+}
+function format(s){let m=Math.floor(s/60);let ss=s%60;return m+":"+("0"+ss).slice(-2);}
+
+// EXAM
+function showExam(){
+hideAll();examBox.classList.remove('hidden');
+exam.innerHTML="";
+examQuestions.forEach((q,i)=>{
+let d=document.createElement("div");
+d.className="question";
+d.innerHTML=`<b>${i+1}. ${q.q}</b>`;
+q.o.forEach((op,ix)=>{
+d.innerHTML+=`<label><input type="radio" name="q${i}" value="${ix}"> ${op}</label><br>`;
+});
+exam.appendChild(d);
+});
 }
 
-function nextQ(){ if(++i<qs.length) showQ(); else finish(); }
-
-function finish(){
-  clearInterval(timerInt);
-  studentExam.classList.add("hidden");
-  let score=0;
-  qs.forEach((q,idx)=>{ if(ans[idx]===q.c) score++; });
-
-  let results=JSON.parse(localStorage.getItem("examResults")||"[]");
-  results.push({
-    ...student,
-    score,
-    total:qs.length,
-    date:new Date().toLocaleString()
-  });
-  localStorage.setItem("examResults",JSON.stringify(results));
-
-  finalScore.innerText=`${student.name}, your score: ${score}/${qs.length}`;
-  result.classList.remove("hidden");
+// SUBMIT
+function submitTest(){
+clearInterval(examTimer);
+let score=0,html="";
+examQuestions.forEach((q,i)=>{
+let sel=document.querySelector(`input[name=q${i}]:checked`);
+let ans=sel?parseInt(sel.value):-1;
+if(ans===q.a) score++;
+html+=`<p>${i+1}. ${q.q}<br>
+<span class="${ans===q.a?'correct':'wrong'}">
+Your: ${ans>=0?q.o[ans]:"NA"} | Correct: ${q.o[q.a]}
+</span></p>`;
+});
+db.ref("attempts/"+Date.now()).set({student,test:currentTest,score});
+hideAll();resultBox.classList.remove('hidden');
+result.innerHTML=`<h3>Score: ${score}/30</h3>`+html;
 }
 
-function loadResults(){
-  let results=JSON.parse(localStorage.getItem("examResults")||"[]");
-  resultTable.innerHTML="";
-  results.forEach(r=>{
-    resultTable.innerHTML+=`<tr>
-      <td>${r.name}</td><td>${r.roll}</td>
-      <td>${r.score}</td><td>${r.total}</td>
-      <td>${r.date}</td>
-    </tr>`;
-  });
+// LOAD ATTEMPTS
+function loadAttempts(){
+db.ref("attempts").on("value",snap=>{
+attemptTable.innerHTML="";
+snap.forEach(s=>{
+let a=s.val();
+attemptTable.innerHTML+=`<tr><td>${a.student.name}</td><td>${a.student.roll}</td><td>${a.test}</td><td>${a.score}</td></tr>`;
+});
+});
 }
 
-function exportCSV(){
-  let rows=JSON.parse(localStorage.getItem("examResults")||"[]");
-  let csv="Name,Roll,Score,Total,Date\n";
-  rows.forEach(r=>csv+=`${r.name},${r.roll},${r.score},${r.total},${r.date}\n`);
-  let a=document.createElement("a");
-  a.href=URL.createObjectURL(new Blob([csv]));
-  a.download="results.csv";
-  a.click();
-}
-
-function shuffle(a){return a.sort(()=>Math.random()-.5)}
+// SHUFFLE
+function shuffle(a){return a.map(v=>[Math.random(),v]).sort((a,b)=>a[0]-b[0]).map(v=>v[1]);}
 </script>
+
 </body>
 </html>
