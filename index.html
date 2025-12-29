@@ -4,49 +4,47 @@
   <title>MCQ Test System</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
-    body { font-family: Arial; padding: 20px; }
-    button { padding: 10px; margin: 5px; }
-    input { padding: 8px; margin: 5px; width: 200px; }
-    .hidden { display: none; }
-    .box { border: 1px solid #ccc; padding: 15px; margin-top: 10px; }
+    body { font-family: Arial; background:#f4f6f8; padding:20px; }
+    h2,h3 { margin-top:0 }
+    button { padding:10px 15px; margin:5px; cursor:pointer }
+    input, textarea { width:100%; padding:8px; margin:5px 0 }
+    .card { background:#fff; padding:15px; margin-top:15px; border-radius:6px }
+    .hidden { display:none }
+    .q { margin-bottom:10px }
   </style>
 </head>
 <body>
 
 <h2>Login As</h2>
-
-<button onclick="showStudent()">Student</button>
-<button onclick="showTeacher()">Teacher</button>
-<button onclick="showAdmin()">Admin</button>
-
-<!-- STUDENT -->
-<div id="studentBox" class="box hidden">
-  <h3>Student Panel</h3>
-  <input id="studentName" placeholder="Enter your name">
-  <button onclick="loadTests()">View Tests</button>
-  <div id="studentTests"></div>
-</div>
+<button onclick="show('student')">Student</button>
+<button onclick="show('teacher')">Teacher</button>
 
 <!-- TEACHER -->
-<div id="teacherBox" class="box hidden">
+<div id="teacher" class="card hidden">
   <h3>Teacher Login</h3>
-  <input id="teacherPin" type="password" placeholder="Enter Teacher PIN">
+  <input id="tPin" type="password" placeholder="Enter Teacher PIN">
   <button onclick="teacherLogin()">Login</button>
 
   <div id="teacherPanel" class="hidden">
-    <h4>Create Test</h4>
+    <h3>Create Test</h3>
     <input id="testTitle" placeholder="Test Title">
-    <button onclick="createTest()">Create Test</button>
-    <p id="teacherMsg"></p>
+
+    <h4>Paste Questions (Bulk)</h4>
+    <textarea id="bulkQ" rows="12"
+      placeholder="Question&#10;Option1&#10;Option2&#10;Option3&#10;Option4&#10;CorrectIndex&#10;&#10;Next Question..."></textarea>
+
+    <button onclick="saveTest()">Save Test</button>
+    <p id="tMsg"></p>
   </div>
 </div>
 
-<!-- ADMIN -->
-<div id="adminBox" class="box hidden">
-  <h3>Admin Login</h3>
-  <input id="adminPin" type="password" placeholder="Enter Admin PIN">
-  <button onclick="adminLogin()">Login</button>
-  <p id="adminMsg"></p>
+<!-- STUDENT -->
+<div id="student" class="card hidden">
+  <h3>Student Panel</h3>
+  <input id="sName" placeholder="Your Name">
+  <button onclick="loadTests()">Load Tests</button>
+  <div id="tests"></div>
+  <div id="exam"></div>
 </div>
 
 <!-- FIREBASE -->
@@ -58,76 +56,81 @@ const firebaseConfig = {
   apiKey: "AIzaSyBQ2-dTUTPwhf7WqceEwXpk9CtPksR1xCk",
   authDomain: "hera-mcqs-55022.firebaseapp.com",
   databaseURL: "https://hera-mcqs-55022-default-rtdb.firebaseio.com",
-  projectId: "hera-mcqs-55022",
-  storageBucket: "hera-mcqs-55022.firebasestorage.app",
-  messagingSenderId: "878791404574",
-  appId: "1:878791404574:web:a0ec3ab2819423aa09120f"
+  projectId: "hera-mcqs-55022"
 };
-
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-/* UI SHOW/HIDE */
-function hideAll() {
-  document.getElementById("studentBox").classList.add("hidden");
-  document.getElementById("teacherBox").classList.add("hidden");
-  document.getElementById("adminBox").classList.add("hidden");
+/* UI */
+function show(id){
+  document.getElementById('teacher').classList.add('hidden');
+  document.getElementById('student').classList.add('hidden');
+  document.getElementById(id).classList.remove('hidden');
 }
-
-function showStudent() { hideAll(); document.getElementById("studentBox").classList.remove("hidden"); }
-function showTeacher() { hideAll(); document.getElementById("teacherBox").classList.remove("hidden"); }
-function showAdmin() { hideAll(); document.getElementById("adminBox").classList.remove("hidden"); }
 
 /* TEACHER */
-function teacherLogin() {
-  const pin = document.getElementById("teacherPin").value;
-  if (pin === "1234") {
-    document.getElementById("teacherPanel").classList.remove("hidden");
-  } else {
-    alert("Wrong Teacher PIN");
-  }
+function teacherLogin(){
+  if(document.getElementById('tPin').value === "1234"){
+    document.getElementById('teacherPanel').classList.remove('hidden');
+  } else alert("Wrong PIN");
 }
 
-function createTest() {
-  const title = document.getElementById("testTitle").value;
-  if (!title) return alert("Enter test title");
+function saveTest(){
+  const title = testTitle.value.trim();
+  const raw = bulkQ.value.trim();
+  if(!title || !raw) return alert("Missing data");
+
+  const blocks = raw.split("\n\n");
+  const questions = [];
+
+  blocks.forEach(b=>{
+    const l = b.split("\n");
+    if(l.length>=6){
+      questions.push({
+        q:l[0],
+        options:[l[1],l[2],l[3],l[4]],
+        correct:Number(l[5])
+      });
+    }
+  });
 
   const id = Date.now();
-  db.ref("tests/" + id).set({
-    title: title
-  }).then(() => {
-    document.getElementById("teacherMsg").innerText = "Test Created Successfully";
-    document.getElementById("testTitle").value = "";
+  db.ref("tests/"+id).set({
+    title,
+    questions
   });
+
+  tMsg.innerText = "Test saved with "+questions.length+" questions";
+  bulkQ.value = ""; testTitle.value="";
 }
 
 /* STUDENT */
-function loadTests() {
-  const box = document.getElementById("studentTests");
-  box.innerHTML = "Loading tests...";
-
-  db.ref("tests").once("value", snap => {
-    box.innerHTML = "";
-    if (!snap.exists()) {
-      box.innerHTML = "No tests available";
-      return;
-    }
-    snap.forEach(test => {
-      const btn = document.createElement("button");
-      btn.innerText = test.val().title;
-      box.appendChild(btn);
+function loadTests(){
+  tests.innerHTML="Loading...";
+  db.ref("tests").once("value",s=>{
+    tests.innerHTML="";
+    s.forEach(t=>{
+      const b=document.createElement("button");
+      b.innerText=t.val().title;
+      b.onclick=()=>startTest(t.key,t.val());
+      tests.appendChild(b);
     });
   });
 }
 
-/* ADMIN */
-function adminLogin() {
-  const pin = document.getElementById("adminPin").value;
-  if (pin === "9999") {
-    document.getElementById("adminMsg").innerText = "Admin Logged In (Next step: reports)";
-  } else {
-    alert("Wrong Admin PIN");
-  }
+function startTest(id,data){
+  exam.innerHTML="<h3>"+data.title+"</h3>";
+  const qs=[...data.questions].sort(()=>0.5-Math.random()).slice(0,30);
+
+  qs.forEach((q,i)=>{
+    const d=document.createElement("div");
+    d.className="q";
+    d.innerHTML="<b>"+(i+1)+". "+q.q+"</b><br>";
+    q.options.forEach(o=>{
+      d.innerHTML+=`<label><input type="radio" name="q${i}"> ${o}</label><br>`;
+    });
+    exam.appendChild(d);
+  });
 }
 </script>
 
