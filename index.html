@@ -1,63 +1,31 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <title>MCQ Test System</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+<style>
+body{font-family:Arial;background:#f4f6f8;margin:0}
+.container{max-width:1000px;margin:auto;padding:20px}
+h2{margin-top:0}
+.card{background:#fff;padding:20px;border-radius:6px;margin-bottom:20px;box-shadow:0 2px 6px rgba(0,0,0,.1)}
+input,select,textarea,button{width:100%;padding:10px;margin:5px 0}
+button{background:#1976d2;color:#fff;border:none;border-radius:4px;cursor:pointer}
+button.secondary{background:#555}
+.hidden{display:none}
+.question{margin:15px 0}
+.option{margin:5px 0}
+.nav-btns{display:flex;gap:10px}
+.timer{color:red;font-weight:bold}
+.test-btn{margin:5px}
+</style>
+
+<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
-<style>
-body { font-family: Arial; background:#f5f5f5; margin:20px }
-.card { background:#fff; padding:20px; margin-bottom:20px; border-radius:6px }
-button { padding:10px 15px; margin:5px }
-input, textarea { width:100%; padding:8px; margin:5px 0 }
-.hidden { display:none }
-.option { margin:8px 0 }
-.timer { font-weight:bold; color:red }
-</style>
-</head>
-
-<body>
-
-<h2>Login As</h2>
-<button onclick="showStudent()">Student</button>
-<button onclick="showTeacher()">Teacher</button>
-
-<!-- STUDENT PANEL -->
-<div id="studentPanel" class="card hidden">
-<h3>Student Panel</h3>
-<input id="studentName" placeholder="Enter your name">
-<button onclick="loadTests()">Load Tests</button>
-<div id="testList"></div>
-<div id="examArea"></div>
-</div>
-
-<!-- TEACHER PANEL -->
-<div id="teacherLogin" class="card hidden">
-<h3>Teacher Login</h3>
-<input type="password" id="teacherPin" placeholder="Enter PIN">
-<button onclick="teacherLogin()">Login</button>
-</div>
-
-<div id="teacherPanel" class="card hidden">
-<h3>Teacher Panel</h3>
-
-<input id="testTitle" placeholder="Test Title">
-<input id="testTime" placeholder="Time (minutes)">
-<textarea id="questionInput" rows="8"
-placeholder="Question | A | B | C | D | correctIndex"></textarea>
-<button onclick="createTest()">Create Test</button>
-
-<h4>All Tests</h4>
-<div id="teacherTests"></div>
-
-<h4>Student Attempts</h4>
-<div id="attempts"></div>
-</div>
-
 <script>
-// 🔥 FIREBASE CONFIG (YOURS)
 const firebaseConfig = {
   apiKey: "AIzaSyBQ2-dTUTPwhf7WqceEwXpk9CtPksR1xCk",
   authDomain: "hera-mcqs-55022.firebaseapp.com",
@@ -69,152 +37,164 @@ const firebaseConfig = {
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
+</script>
+</head>
 
-// UI SWITCH
+<body>
+<div class="container">
+
+<div class="card">
+<h2>Login As</h2>
+<button onclick="showStudent()">Student</button>
+<button onclick="showTeacher()">Teacher</button>
+</div>
+
+<!-- STUDENT -->
+<div id="studentPanel" class="card hidden">
+<h2>Student Panel</h2>
+<input id="sName" placeholder="Student Name">
+<input id="sRoll" placeholder="Roll Number">
+<select id="sClass">
+<option value="">Select Class</option>
+<option>1</option><option>2</option><option>3</option>
+<option>4</option><option>5</option>
+</select>
+<button onclick="loadTests()">Load Tests</button>
+<div id="testList"></div>
+<div id="timer" class="timer"></div>
+<div id="questionArea"></div>
+<div class="nav-btns">
+<button onclick="prevQ()">Previous</button>
+<button onclick="nextQ()">Next</button>
+<button onclick="submitTest()">Submit</button>
+</div>
+</div>
+
+<!-- TEACHER -->
+<div id="teacherPanel" class="card hidden">
+<h2>Teacher Panel</h2>
+<input id="tPin" placeholder="Enter Teacher PIN">
+<button onclick="loginTeacher()">Login</button>
+
+<div id="teacherArea" class="hidden">
+<input id="tTitle" placeholder="Test Title">
+<select id="tClass">
+<option value="">Class</option>
+<option>1</option><option>2</option><option>3</option>
+<option>4</option><option>5</option>
+</select>
+<input id="tTime" placeholder="Time (minutes)">
+<textarea id="tQuestions" rows="10" placeholder="Paste questions here"></textarea>
+<button onclick="createTest()">Create Test</button>
+<div id="teacherTests"></div>
+</div>
+</div>
+
+</div>
+
+<script>
+let currentTest=null,questions=[],index=0,answers={},timerInt,timeLeft=0;
+
 function showStudent(){
-  studentPanel.classList.remove("hidden");
-  teacherLogin.classList.add("hidden");
-  teacherPanel.classList.add("hidden");
+document.getElementById("studentPanel").classList.remove("hidden");
+document.getElementById("teacherPanel").classList.add("hidden");
 }
 function showTeacher(){
-  teacherLogin.classList.remove("hidden");
-  studentPanel.classList.add("hidden");
+document.getElementById("teacherPanel").classList.remove("hidden");
+document.getElementById("studentPanel").classList.add("hidden");
 }
 
-// TEACHER LOGIN
-function teacherLogin(){
-  if(teacherPin.value==="12345"){
-    teacherPanel.classList.remove("hidden");
-    teacherLogin.classList.add("hidden");
-    loadTeacherTests();
-    loadAttempts();
-  } else alert("Wrong PIN");
+function loginTeacher(){
+if(document.getElementById("tPin").value==="12345"){
+document.getElementById("teacherArea").classList.remove("hidden");
+loadTeacherTests();
+}else alert("Wrong PIN");
 }
 
-// CREATE TEST
 function createTest(){
-  let qs=[];
-  questionInput.value.trim().split("\n").forEach(l=>{
-    let p=l.split("|").map(x=>x.trim());
-    if(p.length===6){
-      qs.push({q:p[0],o:p.slice(1,5),c:Number(p[5])});
-    }
-  });
-  db.ref("tests").push({
-    title:testTitle.value,
-    time:Number(testTime.value),
-    questions:qs
-  });
-  alert("Test Created");
-  loadTeacherTests();
+const id=Date.now();
+const lines=document.getElementById("tQuestions").value.trim().split("\n");
+let qs=[];
+lines.forEach(l=>{
+const p=l.split("|").map(x=>x.trim());
+if(p.length>=6)qs.push({q:p[0],o:p.slice(1,5),a:parseInt(p[5])});
+});
+db.ref("tests/"+id).set({
+title:tTitle.value,class:tClass.value,time:tTime.value,questions:qs
+});
+alert("Test Created");
+loadTeacherTests();
 }
 
-// LOAD TEACHER TESTS
 function loadTeacherTests(){
-  teacherTests.innerHTML="";
-  db.ref("tests").once("value",s=>{
-    s.forEach(t=>{
-      teacherTests.innerHTML+=`
-      <div>
-        ${t.val().title}
-        <button onclick="deleteTest('${t.key}')">Delete</button>
-      </div>`;
-    });
-  });
+teacherTests.innerHTML="";
+db.ref("tests").once("value",s=>{
+s.forEach(c=>{
+teacherTests.innerHTML+=`<div>${c.val().title}
+<button onclick="deleteTest('${c.key}')">Delete</button></div>`;
+});
+});
 }
 function deleteTest(id){
-  if(confirm("Delete test?")){
-    db.ref("tests/"+id).remove();
-    loadTeacherTests();
-  }
+db.ref("tests/"+id).remove();
+loadTeacherTests();
 }
 
-// STUDENT LOAD TESTS
 function loadTests(){
-  testList.innerHTML="";
-  db.ref("tests").once("value",s=>{
-    s.forEach(t=>{
-      testList.innerHTML+=`
-      <button onclick="startTest('${t.key}')">${t.val().title}</button>`;
-    });
-  });
+testList.innerHTML="";
+db.ref("tests").once("value",s=>{
+s.forEach(c=>{
+if(c.val().class===sClass.value){
+testList.innerHTML+=`<button class="test-btn" onclick="startTest('${c.key}')">${c.val().title}</button>`;
 }
-
-// EXAM LOGIC
-let exam=[], idx=0, answers=[], timerInt, timeLeft, currentTestId;
+});
+});
+}
 
 function startTest(id){
-  currentTestId=id;
-  db.ref("tests/"+id).once("value",s=>{
-    let q=s.val().questions;
-    exam=q.sort(()=>0.5-Math.random()).slice(0,30);
-    answers=[];
-    idx=0;
-    timeLeft=s.val().time*60;
-    runTimer();
-    showQuestion();
-  });
+db.ref("tests/"+id).once("value",s=>{
+currentTest=id;
+let all=s.val().questions;
+questions=all.sort(()=>0.5-Math.random()).slice(0,30);
+timeLeft=s.val().time*60;
+index=0;answers={};
+startTimer();
+showQ();
+});
 }
 
-function runTimer(){
-  clearInterval(timerInt);
-  timerInt=setInterval(()=>{
-    timeLeft--;
-    document.getElementById("timer")?.remove();
-    examArea.insertAdjacentHTML("afterbegin",
-      `<div id="timer" class="timer">Time: ${timeLeft}s</div>`);
-    if(timeLeft<=0) submitTest();
-  },1000);
+function startTimer(){
+clearInterval(timerInt);
+timerInt=setInterval(()=>{
+timer.innerText="Time: "+timeLeft+"s";
+if(timeLeft--<=0)submitTest();
+},1000);
 }
 
-function showQuestion(){
-  let q=exam[idx];
-  examArea.innerHTML=`
-  <div class="timer" id="timer"></div>
-  <h4>Q ${idx+1}/30</h4>
-  <p>${q.q}</p>
-  ${q.o.map((o,i)=>`
-    <div class="option">
-    <input type="radio" name="opt" value="${i}"
-    ${answers[idx]==i?"checked":""}
-    onclick="answers[${idx}]=${i}">
-    ${o}
-    </div>`).join("")}
-  <button onclick="prevQ()">Previous</button>
-  <button onclick="nextQ()">Next</button>
-  <button onclick="submitTest()">Submit</button>`;
+function showQ(){
+const q=questions[index];
+let html=`<div class="question"><b>${index+1}. ${q.q}</b>`;
+q.o.forEach((o,i)=>{
+html+=`<div class="option">
+<input type="radio" name="opt" ${answers[index]==i?"checked":""}
+onclick="answers[${index}]=${i}"> ${o}</div>`;
+});
+questionArea.innerHTML=html;
 }
 
-function nextQ(){ if(idx<29){ idx++; showQuestion(); } }
-function prevQ(){ if(idx>0){ idx--; showQuestion(); } }
+function nextQ(){if(index<questions.length-1){index++;showQ();}}
+function prevQ(){if(index>0){index--;showQ();}}
 
 function submitTest(){
-  clearInterval(timerInt);
-  let score=0;
-  exam.forEach((q,i)=>{ if(answers[i]==q.c) score++; });
-
-  db.ref("attempts").push({
-    student:studentName.value,
-    test:currentTestId,
-    score:score,
-    time:new Date().toLocaleString()
-  });
-
-  examArea.innerHTML=`<h3>Score: ${score}/30</h3>`;
-}
-
-// LOAD ATTEMPTS
-function loadAttempts(){
-  attempts.innerHTML="";
-  db.ref("attempts").on("value",s=>{
-    attempts.innerHTML="";
-    s.forEach(a=>{
-      let v=a.val();
-      attempts.innerHTML+=`${v.student} : ${v.score} <br>`;
-    });
-  });
+clearInterval(timerInt);
+let score=0;
+questions.forEach((q,i)=>{if(answers[i]==q.a)score++;});
+db.ref("attempts/"+currentTest+"/"+Date.now()).set({
+name:sName.value,roll:sRoll.value,class:sClass.value,score
+});
+alert("Score: "+score+"/"+questions.length);
+location.reload();
 }
 </script>
-
 </body>
 </html>
