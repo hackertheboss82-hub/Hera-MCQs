@@ -1,298 +1,272 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>HERA MCQ TEST SYSTEM</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <style>
-        body { font-family: Arial; margin: 0; background: #f4f6fb; }
-        .hidden { display: none; }
-        button { padding: 10px 15px; font-size: 15px; cursor: pointer; border-radius: 6px; border: none; background: #2563eb; color: #fff; }
-        button:hover { background: #1e40af; }
-        input, select, textarea { padding: 8px; width: 100%; margin: 5px 0; font-size: 14px; }
-        .card { background: #fff; padding: 15px; border-radius: 10px; margin: 10px auto; max-width: 900px; box-shadow: 0 4px 10px rgba(0,0,0,.1); }
-        h2 { text-align: center; }
-        .option { display: flex; align-items: center; margin: 8px 0; padding: 8px; border: 1px solid #ccc; border-radius: 6px; }
-        .option input { width: 20px; height: 20px; margin-right: 10px; }
-        .palette button { width: 38px; height: 38px; margin: 4px; border-radius: 50%; }
-        .palette .done { background: green; }
-        .palette .current { background: orange; }
-        .palette .pending { background: #ddd; color: #000; }
-        .timer { font-weight: bold; color: #dc2626; text-align: center; }
-        .progress { height: 10px; margin-bottom: 20px; }
-        .modal-body { max-height: 400px; overflow-y: auto; }
-        /* Cheating prevention */
-        body { -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; }
-    </style>
+<meta charset="UTF-8">
+<title>MCQ Online Test</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<style>
+body{background:#f1f5f9}
+.hidden{display:none}
+.option{border:1px solid #ccc;padding:10px;margin:6px 0;border-radius:6px;cursor:pointer}
+.option:hover{background:#e0f2fe}
+.answered{background:#22c55e;color:#fff}
+.palette button{width:38px;margin:3px}
+.timer{font-weight:bold;color:#dc2626}
+</style>
 </head>
-<body oncontextmenu="return false;" oncopy="return false;" onpaste="return false;" oncut="return false;" onblur="pauseTimer()" onfocus="resumeTimer()" onbeforeunload="return 'Are you sure you want to leave? Your progress may be lost.';">
-    <header class="bg-primary text-white p-3 text-center">
-        <h2>📘 HERA MCQ TEST SYSTEM</h2>
-    </header>
 
-    <div class="container my-4">
-        <div class="card" id="loginBox">
-            <h2>Login</h2>
-            <select id="role" class="form-select mb-2">
-                <option value="student">Student</option>
-                <option value="teacher">Teacher</option>
-            </select>
-            <input id="name" class="form-control mb-2" placeholder="Name" required>
-            <input id="class" class="form-control mb-2" placeholder="Class (JR to 10)" required>
-            <input id="pin" type="password" class="form-control mb-2" placeholder="Teacher PIN (only for teacher)">
-            <button class="btn btn-primary" onclick="login()">Login</button>
-        </div>
+<body oncontextmenu="return false">
 
-        <div class="card hidden" id="teacherPanel">
-            <h2>Teacher Panel</h2>
-            <h5>Manage Students</h5>
-            <input id="newSName" class="form-control mb-2" placeholder="Student Name">
-            <input id="newSPass" type="password" class="form-control mb-2" placeholder="Password">
-            <select id="newSClass" class="form-select mb-2">
-                <option>JR</option><option>SR</option><option>1</option><option>2</option>
-                <option>3</option><option>4</option><option>5</option>
-                <option>6</option><option>7</option><option>8</option>
-                <option>9</option><option>10</option>
-            </select>
-            <button class="btn btn-primary mb-3" onclick="addStudent()">Add Student</button>
+<div class="container my-4">
 
-            <h5>Create / Edit Test</h5>
-            <input id="testTitle" class="form-control mb-2" placeholder="Test Title" required>
-            <select id="testClass" class="form-select mb-2">
-                <option>JR</option><option>SR</option><option>1</option><option>2</option>
-                <option>3</option><option>4</option><option>5</option>
-                <option>6</option><option>7</option><option>8</option>
-                <option>9</option><option>10</option>
-            </select>
-            <input id="testTime" type="number" class="form-control mb-2" placeholder="Time (minutes)" min="1" required>
-            <textarea id="questions" class="form-control mb-2" rows="12" placeholder="PASTE QUESTIONS FORMAT:
+<h3 class="text-center mb-4">📘 MCQ Online Test System</h3>
 
-Question
+<!-- STUDENT ENTRY -->
+<div id="studentEntry" class="card p-4">
+<h5>Student Details</h5>
+<input id="stName" class="form-control mb-2" placeholder="Student Name">
+<input id="stRoll" class="form-control mb-2" placeholder="Roll Number">
+<select id="stClass" class="form-select mb-2">
+<option value="">Select Class</option>
+<option>1</option><option>2</option><option>3</option><option>4</option>
+<option>5</option><option>6</option><option>7</option><option>8</option>
+<option>9</option><option>10</option>
+</select>
+<button class="btn btn-primary" onclick="loadTests()">Load Tests</button>
+</div>
+
+<!-- TEST LIST -->
+<div id="testListCard" class="card p-4 mt-3 hidden">
+<h5>Select Test</h5>
+<div id="testList"></div>
+</div>
+
+<!-- TEST SCREEN -->
+<div id="testScreen" class="card p-4 mt-3 hidden">
+<div class="timer mb-2" id="timer"></div>
+<div id="palette" class="mb-3"></div>
+<div id="qBox"></div>
+<div class="d-flex justify-content-between mt-3">
+<button class="btn btn-secondary" onclick="prevQ()">Prev</button>
+<button class="btn btn-secondary" onclick="nextQ()">Next</button>
+<button class="btn btn-danger" onclick="submitTest()">Submit</button>
+</div>
+</div>
+
+<!-- TEACHER LOGIN -->
+<div id="teacherLogin" class="card p-4 mt-4">
+<h5>Teacher Login</h5>
+<input id="tPin" type="password" class="form-control mb-2" placeholder="Enter PIN">
+<button class="btn btn-dark" onclick="teacherLogin()">Login</button>
+</div>
+
+<!-- TEACHER PANEL -->
+<div id="teacherPanel" class="card p-4 mt-3 hidden">
+<h5>Create Test</h5>
+<input id="testName" class="form-control mb-2" placeholder="Test Name">
+<select id="testClass" class="form-select mb-2">
+<option>1</option><option>2</option><option>3</option><option>4</option>
+<option>5</option><option>6</option><option>7</option><option>8</option>
+<option>9</option><option>10</option>
+</select>
+<input id="testTime" type="number" class="form-control mb-2" placeholder="Time (minutes)">
+<textarea id="questionsText" rows="10" class="form-control mb-2"
+placeholder="Question
 Option1
 Option2
 Option3
 Option4
-CorrectIndex (0-3)
+CorrectIndex(0-3)
+(repeat)"></textarea>
+<button class="btn btn-success" onclick="saveTest()">Save Test</button>
 
-(blank line)
-"></textarea>
-            <button class="btn btn-warning me-2" onclick="previewTest()">Preview</button>
-            <button class="btn btn-success" onclick="createTest()">Save Test</button>
+<hr>
+<h5>Attempts</h5>
+<table class="table">
+<thead>
+<tr><th>Name</th><th>Roll</th><th>Class</th><th>Score</th><th>Status</th></tr>
+</thead>
+<tbody id="attemptTable"></tbody>
+</table>
+</div>
 
-            <h3>Your Tests</h3>
-            <div id="teacherTests"></div>
+</div>
 
-            <h3>Attempts</h3>
-            <select id="classFilter" class="form-select mb-2" onchange="loadAttempts()">
-                <option value="">All Classes</option>
-                <option>JR</option><option>SR</option><option>1</option><option>2</option>
-                <option>3</option><option>4</option><option>5</option>
-                <option>6</option><option>7</option><option>8</option>
-                <option>9</option><option>10</option>
-            </select>
-            <button class="btn btn-outline-primary mb-2" onclick="exportAttempts()">Export CSV</button>
-            <div id="attempts"></div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
-            <button class="btn btn-secondary mt-3" onclick="logout()">Logout</button>
-        </div>
+<script>
+/* 🔥 FIREBASE CONFIG (REPLACE) */
+const firebaseConfig = {
+apiKey: "YOUR_API_KEY",
+databaseURL: "YOUR_DATABASE_URL",
+projectId: "YOUR_PROJECT_ID"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
 
-        <div class="card hidden" id="studentPanel">
-            <h2 id="testName"></h2>
-            <div id="timer" class="timer mb-2"></div>
-            <div class="progress">
-                <div class="progress-bar" id="progressBar" style="width: 0%"></div>
-            </div>
-            <div id="questionBox"></div>
-            <div id="navBtns" class="d-flex justify-content-between mt-3">
-                <button class="btn btn-secondary" onclick="prevQ()">Previous</button>
-                <button class="btn btn-info" onclick="reviewTest()">Review</button>
-                <button class="btn btn-secondary" onclick="nextQ()">Next</button>
-                <button class="btn btn-danger" onclick="confirmSubmit()">Submit</button>
-            </div>
-            <div class="palette" id="palette"></div>
-        </div>
-    </div>
+/* GLOBALS */
+let student={}, questions=[], answers=[], current=0, timerInt, timeLeft;
+let activeTestId="", activeTestData={};
 
-    <footer class="text-center p-3 bg-light">
-        <p>&copy; 2023 HERA MCQ System. All rights reserved.</p>
-    </footer>
+/* STUDENT */
+function loadTests(){
+let n=stName.value, r=stRoll.value, c=stClass.value;
+if(!n||!r||!c) return alert("Fill all fields");
+student={name:n, roll:r, class:c};
+testList.innerHTML="";
+db.ref("tests").orderByChild("class").equalTo(c).once("value",s=>{
+s.forEach(t=>{
+let b=document.createElement("button");
+b.className="btn btn-outline-primary m-1";
+b.innerText=t.val().name;
+b.onclick=()=>checkAttempt(t.key,t.val());
+testList.appendChild(b);
+});
+studentEntry.classList.add("hidden");
+testListCard.classList.remove("hidden");
+});
+}
 
-    <!-- Modals -->
-    <div class="modal fade" id="errorModal" tabindex="-1">
-        <div class="modal-dialog"><div class="modal-content">
-            <div class="modal-header"><h5 class="modal-title">Error</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-            <div class="modal-body" id="errorMessage"></div>
-            <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button></div>
-        </div></div>
-    </div>
+function checkAttempt(id,data){
+db.ref(`attempts/${id}/${student.class}/${student.roll}`).once("value",s=>{
+if(s.exists() && s.val().status==="submitted"){
+alert("You already submitted this test");
+}else{
+startTest(id,data);
+}
+});
+}
 
-    <div class="modal fade" id="confirmModal" tabindex="-1">
-        <div class="modal-dialog"><div class="modal-content">
-            <div class="modal-header"><h5 class="modal-title">Confirm</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-            <div class="modal-body" id="confirmMessage"></div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" id="confirmAction">Confirm</button>
-            </div>
-        </div></div>
-    </div>
+/* TEST */
+function startTest(id,data){
+activeTestId=id;
+activeTestData=data;
+questions=shuffle(data.questions).slice(0,30);
+answers=new Array(questions.length).fill(null);
+current=0;
+timeLeft=data.time*60;
+testListCard.classList.add("hidden");
+testScreen.classList.remove("hidden");
+renderPalette();
+renderQ();
+startTimer();
+db.ref(`attempts/${id}/${student.class}/${student.roll}`).set({
+name:student.name,
+roll:student.roll,
+class:student.class,
+status:"in_progress"
+});
+}
 
-    <div class="modal fade" id="resultModal" tabindex="-1">
-        <div class="modal-dialog modal-lg"><div class="modal-content">
-            <div class="modal-header"><h5 class="modal-title">Results</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-            <div class="modal-body" id="resultContent"></div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-success" onclick="downloadPDF()">Download PDF</button>
-            </div>
-        </div></div>
-    </div>
+function renderPalette(){
+palette.innerHTML="";
+questions.forEach((q,i)=>{
+let b=document.createElement("button");
+b.innerText=i+1;
+b.className=answers[i]==null?"btn btn-secondary":"btn btn-success";
+b.onclick=()=>{current=i;renderQ()};
+palette.appendChild(b);
+});
+}
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyBQ2-dTUTPwhf7WqceEwXpk9CtPksR1xCk",
-            authDomain: "hera-mcqs-55022.firebaseapp.com",
-            databaseURL: "https://hera-mcqs-55022-default-rtdb.firebaseio.com",
-            projectId: "hera-mcqs-55022",
-            storageBucket: "hera-mcqs-55022.firebasestorage.app",
-            messagingSenderId: "878791404574",
-            appId: "1:878791404574:web:a0ec3ab2819423aa09120f"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
+function renderQ(){
+let q=questions[current];
+qBox.innerHTML=`<h6>${current+1}. ${q.q}</h6>`;
+q.opts.forEach((o,i)=>{
+let d=document.createElement("div");
+d.className="option";
+if(answers[current]===i)d.classList.add("answered");
+d.innerText=o;
+d.onclick=()=>{answers[current]=i;renderQ();renderPalette()};
+qBox.appendChild(d);
+});
+}
 
-        let role, userName, userClass, currentTest = {}, qIndex = 0, answers = {}, timerInt, timeLeft, editId = null, pausedTime = 0, resultData = {};
-        let autoSaveInterval;
+function nextQ(){if(current<questions.length-1){current++;renderQ()}}
+function prevQ(){if(current>0){current--;renderQ()}}
 
-        function showError(message) { document.getElementById('errorMessage').textContent = message; new bootstrap.Modal(document.getElementById('errorModal')).show(); }
-        function showConfirm(message, action) { document.getElementById('confirmMessage').textContent = message; document.getElementById('confirmAction').onclick = action; new bootstrap.Modal(document.getElementById('confirmModal')).show(); }
+function startTimer(){
+timerInt=setInterval(()=>{
+let m=Math.floor(timeLeft/60),s=timeLeft%60;
+timer.innerText=`Time Left: ${m}:${s<10?"0":""}${s}`;
+timeLeft--;
+if(timeLeft<0)submitTest();
+},1000);
+}
 
-        function login() {
-            role = document.getElementById("role").value;
-            userName = name.value.trim();
-            userClass = class.value.trim();
-            if (!userName) return showError("Enter name");
+function submitTest(){
+clearInterval(timerInt);
+let score=0;
+questions.forEach((q,i)=>{if(answers[i]===q.ans)score++});
+db.ref(`attempts/${activeTestId}/${student.class}/${student.roll}`).update({
+status:"submitted",
+score:`${score}/${questions.length}`,
+time:new Date().toLocaleString()
+});
+alert("Test Submitted\nScore: "+score+"/"+questions.length);
+location.reload();
+}
 
-            if (role === "teacher") {
-                if (pin.value !== "1914") return showError("Wrong PIN");
-                loginBox.classList.add("hidden");
-                teacherPanel.classList.remove("hidden");
-                loadTeacherTests();
-                loadAttempts();
-            } else {
-                loadStudentTest();
-            }
-        }
+/* TEACHER */
+function teacherLogin(){
+if(tPin.value==="1914"){
+teacherLogin.classList.add("hidden");
+teacherPanel.classList.remove("hidden");
+loadAttempts();
+}else alert("Wrong PIN");
+}
 
-        function logout() { location.reload(); }
+function saveTest(){
+let raw=questionsText.value.trim().split("\n");
+let qs=[];
+for(let i=0;i<raw.length;i+=6){
+if(!raw[i+5])break;
+qs.push({
+q:raw[i],
+opts:[raw[i+1],raw[i+2],raw[i+3],raw[i+4]],
+ans:parseInt(raw[i+5])
+});
+}
+let id=Date.now();
+db.ref("tests/"+id).set({
+name:testName.value,
+class:testClass.value,
+time:parseInt(testTime.value),
+questions:qs
+});
+alert("Test Saved");
+questionsText.value="";
+}
 
-        function addStudent() {
-            let name = newSName.value.trim(), pass = newSPass.value.trim(), cls = newSClass.value;
-            if (!name || !pass) return showError("Enter name and password.");
-            db.ref("students").push({ name, password: pass, class: cls, createdBy: userName }).then(() => {
-                alert("Student added!");
-                newSName.value = ""; newSPass.value = "";
-            }).catch(e => showError("Failed: " + e.message));
-        }
+function loadAttempts(){
+attemptTable.innerHTML="";
+db.ref("attempts").once("value",s=>{
+s.forEach(t=>{
+t.forEach(c=>{
+c.forEach(r=>{
+let d=r.val();
+attemptTable.innerHTML+=`<tr>
+<td>${d.name||""}</td>
+<td>${d.roll||""}</td>
+<td>${d.class||""}</td>
+<td>${d.score||""}</td>
+<td>${d.status}</td>
+</tr>`;
+});
+});
+});
+});
+}
 
-        function parseQuestions(text) {
-            let blocks = text.trim().split(/\n\s*\n/);
-            let qs = [];
-            blocks.forEach(b => {
-                let l = b.split("\n").map(x => x.trim()).filter(x => x);
-                if (l.length >= 6) {
-                    let ans = parseInt(l[5]);
-                    if (isNaN(ans) || ans < 0 || ans > 3) return showError("Correct index must be 0-3.");
-                    qs.push({ q: l[0], opts: l.slice(1, 5), ans });
-                }
-            });
-            if (qs.length === 0) throw "No valid questions found.";
-            return qs;
-        }
+/* UTILS */
+function shuffle(a){return a.sort(()=>Math.random()-0.5)}
+</script>
 
-        function previewTest() {
-            try {
-                let qs = parseQuestions(questions.value);
-                let preview = qs.slice(0, 5).map((q, i) => `<p><strong>Q${i+1}:</strong> ${q.q}<br>Options: ${q.opts.join(', ')}<br>Correct: ${q.opts[q.ans]}</p>`).join('');
-                showError("Preview (first 5):\n" + preview);
-            } catch (e) { showError(e); }
-        }
-
-        function createTest() {
-            try {
-                let qs = parseQuestions(questions.value);
-                let data = {
-                    title: testTitle.value,
-                    class: testClass.value,
-                    time: +testTime.value,
-                    questions: qs,
-                    createdBy: userName
-                };
-                let path = editId ? `tests/${data.class}/${editId}` : `tests/${data.class}/${data.title}`;
-                db.ref(path).set(data).then(() => {
-                    alert("Test Saved");
-                    editId = null;
-                    loadTeacherTests();
-                }).catch(e => showError("Save failed: " + e.message));
-            } catch (e) { showError(e); }
-        }
-
-        function loadTeacherTests() {
-            teacherTests.innerHTML = "";
-            db.ref("tests").once("value", s => {
-                s.forEach(c => {
-                    c.forEach(t => {
-                        let d = t.val();
-                        if (d.createdBy === userName) {
-                            let div = document.createElement("div");
-                            div.innerHTML = `${d.title} (${c.key})
-                            <button onclick="editTest('${c.key}','${d.title}')">Edit</button>
-                            <button onclick="deleteTest('${c.key}','${d.title}')">Delete</button>`;
-                            teacherTests.appendChild(div);
-                        }
-                    });
-                });
-            }).catch(e => showError("Failed to load tests: " + e.message));
-        }
-
-        function editTest(cls, title) {
-            db.ref(`tests/${cls}/${title}`).once("value", s => {
-                let d = s.val();
-                editId = title;
-                testTitle.value = d.title;
-                testClass.value = d.class;
-                testTime.value = d.time;
-                questions.value = d.questions.map(q => [q.q, ...q.opts, q.ans].join("\n")).join("\n\n");
-            }).catch(e => showError("Failed to load test: " + e.message));
-        }
-
-        function deleteTest(cls, title) {
-            showConfirm("Delete test?", () => {
-                db.ref(`tests/${cls}/${title}`).remove().then(loadTeacherTests).catch(e => showError("Delete failed: " + e.message));
-            });
-        }
-
-        function loadStudentTest() {
-            db.ref("tests/" + userClass).limitToFirst(1).once("value", s => {
-                if (!s.exists()) return showError("No test available.");
-                let key = Object.keys(s.val())[0];
-                currentTest = s.val()[key];
-                startTest();
-            }).catch(e => showError("Failed to load test: " + e.message));
-        }
-
-        function startTest() {
-            // Check attempt
-            db.ref("attempts").orderByChild("student").equalTo(userName).once("value", s => {
-                let attempted = false;
-                s.forEach(a => { if (a.val().test === currentTest.title) attempted = true; });
-                if (attempted) return showError("Already attempted.");
-                loginBox.classList.add("hidden");
-                studentPanel.classList.remove("hidden");
-                currentTest.questions = shuffle(currentTest.questions).slice(0, 30);
-                timeLeft =
+</body>
+</html>
