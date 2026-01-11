@@ -2,231 +2,202 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>HERA MCQ SYSTEM</title>
-
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-
+<title>School Test System</title>
 <style>
-body{font-family:Arial;background:#f1f5f9;margin:0}
-.box{width:95%;max-width:950px;margin:20px auto;background:#fff;padding:20px;border-radius:8px}
-input,select,textarea,button{width:100%;padding:8px;margin-top:8px}
-button{background:#2563eb;color:#fff;border:none;cursor:pointer}
-button:hover{background:#1e40af}
+body{font-family:Arial;background:#f4f4f4;padding:20px}
+.box{background:#fff;padding:15px;margin-bottom:20px;border-radius:5px}
 .hidden{display:none}
-.option{border:1px solid #ccc;padding:10px;border-radius:6px;margin:8px 0;cursor:pointer}
-.option.active{background:#22c55e;color:white}
-.palette button{width:36px;margin:3px;border:none;border-radius:4px}
-.visited{background:#93c5fd}
-.answered{background:#22c55e;color:white}
-.timer{color:#dc2626;font-weight:bold;text-align:center}
+input,select,button{padding:8px;margin:5px;width:100%}
+button{cursor:pointer;background:#2b7cff;color:white;border:none}
+.question{border:1px solid #ddd;padding:10px;margin:10px 0}
 </style>
 </head>
-
 <body>
 
-<div class="box" id="roleBox">
-  <h2>Select Role</h2>
-  <button onclick="showStudent()">Student</button>
-  <button onclick="showTeacher()">Teacher</button>
-</div>
-
-<!-- STUDENT ENTRY -->
-<div class="box hidden" id="studentBox">
-  <h2>Student Entry</h2>
-  <input id="stuName" placeholder="Student Name">
-  <input id="stuRoll" placeholder="Roll No">
-  <select id="stuClass">
-    <option value="">Class</option>
-    <option>JR</option><option>SR</option>
-    <option>1</option><option>2</option><option>3</option>
-    <option>4</option><option>5</option><option>6</option>
-    <option>7</option><option>8</option><option>9</option><option>10</option>
-  </select>
-  <button onclick="studentLogin()">Continue</button>
-  <button onclick="back()">Back</button>
-</div>
-
-<!-- TEST LIST -->
-<div class="box hidden" id="testListBox">
-  <h3>Available Tests</h3>
-  <div id="tests"></div>
-</div>
-
-<!-- TEST SCREEN -->
-<div class="box hidden" id="testBox">
-  <div class="timer" id="timer"></div>
-  <div class="palette" id="palette"></div>
-  <div id="questionBox"></div>
-  <button onclick="prevQ()">Prev</button>
-  <button onclick="nextQ()">Next</button>
-  <button onclick="submitTest()">Submit</button>
-</div>
+<h2>Online Test System</h2>
 
 <!-- TEACHER LOGIN -->
-<div class="box hidden" id="teacherBox">
-  <h2>Teacher Login</h2>
-  <input type="password" id="teacherPin" placeholder="PIN">
-  <button onclick="teacherLogin()">Login</button>
-  <button onclick="back()">Back</button>
+<div id="teacherLogin" class="box">
+<h3>Teacher Login</h3>
+<input type="password" id="teacherPin" placeholder="Enter PIN">
+<button onclick="teacherLogin()">Login</button>
 </div>
 
 <!-- TEACHER PANEL -->
-<div class="box hidden" id="teacherPanel">
-  <h2>Attempts</h2>
-  <table border="1" width="100%">
-    <thead>
-      <tr><th>Name</th><th>Roll</th><th>Class</th><th>Test</th><th>Score</th></tr>
-    </thead>
-    <tbody id="attempts"></tbody>
-  </table>
+<div id="teacherPanel" class="box hidden">
+<h3>Teacher Panel</h3>
+<button onclick="logoutTeacher()">Logout</button>
+
+<h4>Create Test</h4>
+<input id="tClass" placeholder="Class (e.g. 10A)">
+<input id="tName" placeholder="Test Name">
+
+<div id="questions"></div>
+<button onclick="addQuestion()">Add Question</button>
+<button onclick="saveTest()">Save Test</button>
+
+<h4>Student Attempts</h4>
+<select id="viewClass" onchange="loadAttempts()"></select>
+<select id="viewTest" onchange="loadAttempts()"></select>
+<div id="attempts"></div>
 </div>
 
+<!-- STUDENT PANEL -->
+<div id="studentPanel" class="box">
+<h3>Student Panel</h3>
+<input id="sName" placeholder="Student Name">
+<input id="sRoll" placeholder="Roll Number">
+<input id="sClass" placeholder="Class">
+<button onclick="loadStudentTest()">Load Test</button>
+
+<div id="testBox" class="hidden">
+<h3 id="testTitle"></h3>
+<div id="studentQuestions"></div>
+<button onclick="submitTest()">Submit Test</button>
+</div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+import { getDatabase, ref, set, get, remove, onValue } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
 <script>
-/* FIREBASE */
 firebase.initializeApp({
- apiKey:"AIzaSyBQ2-dTUTPwhf7WqceEwXpk9CtPksR1xCk",
- authDomain:"hera-mcqs-55022.firebaseapp.com",
- projectId:"hera-mcqs-55022"
+  apiKey: "AIzaSyBQ2-dTUTPwhf7WqceEwXpk9CtPksR1xCk",
+  authDomain: "hera-mcqs-55022.firebaseapp.com",
+  databaseURL: "https://hera-mcqs-55022-default-rtdb.firebaseio.com",
+  projectId: "hera-mcqs-55022",
+  storageBucket: "hera-mcqs-55022.appspot.com"
 });
-const db=firebase.firestore();
-
-/* GLOBAL */
-let student={},testData={},questions=[],answers=[],current=0,timeLeft,timerInt,attemptId=null;
-
-/* UI */
-function hideAll(){document.querySelectorAll(".box").forEach(b=>b.classList.add("hidden"))}
-function back(){hideAll();roleBox.classList.remove("hidden")}
-function showStudent(){hideAll();studentBox.classList.remove("hidden")}
-function showTeacher(){hideAll();teacherBox.classList.remove("hidden")}
-
-/* TEACHER */
-function teacherLogin(){
- if(teacherPin.value!=="1914"){alert("Wrong PIN");return}
- hideAll();teacherPanel.classList.remove("hidden");
- loadAttempts();
-}
-function loadAttempts(){
- attempts.innerHTML="";
- db.collection("attempts").get().then(s=>{
-  s.forEach(d=>{
-   let a=d.data();
-   attempts.innerHTML+=`<tr>
-    <td>${a.name}</td>
-    <td>${a.roll}</td>
-    <td>${a.class}</td>
-    <td>${a.test}</td>
-    <td>${a.score}</td>
-   </tr>`;
-  })
- })
-}
-
-/* STUDENT */
-function studentLogin(){
- if(!stuName.value||!stuRoll.value||!stuClass.value){alert("Fill all");return}
- student={name:stuName.value,roll:stuRoll.value,class:stuClass.value};
- hideAll();testListBox.classList.remove("hidden");
- loadTests();
-}
-
-function loadTests(){
- tests.innerHTML="";
- db.collection("tests").where("class","==",student.class).get().then(s=>{
-  s.forEach(d=>{
-   let b=document.createElement("button");
-   b.innerText=d.data().name;
-   b.onclick=()=>startTest(d.id,d.data());
-   tests.appendChild(b);
-  })
- })
-}
-
-function startTest(id,data){
- db.collection("attempts")
- .where("roll","==",student.roll)
- .where("test","==",id)
- .get().then(s=>{
-   if(!s.empty){
-     let a=s.docs[0].data();
-     if(a.completed){alert("Already attempted");return}
-     attemptId=s.docs[0].id;
-     questions=a.questions;answers=a.answers;timeLeft=a.timeLeft;
-     beginTest();
-   }else{
-     questions=shuffle(data.questions).slice(0,30);
-     answers=new Array(questions.length).fill(null);
-     timeLeft=data.time*60;
-     db.collection("attempts").add({
-       name:student.name,roll:student.roll,class:student.class,
-       test:id,questions,answers,timeLeft,completed:false
-     }).then(r=>{attemptId=r.id;beginTest()})
-   }
- })
-}
-
-function beginTest(){
- hideAll();testBox.classList.remove("hidden");
- renderQ();renderPalette();startTimer();
-}
-
-function renderQ(){
- let q=questions[current];
- questionBox.innerHTML=`<h4>${current+1}. ${q.q}</h4>`;
- q.o.forEach((o,i)=>{
-  let d=document.createElement("div");
-  d.className="option";
-  if(answers[current]===i)d.classList.add("active");
-  d.innerText=o;
-  d.onclick=()=>{answers[current]=i;saveProgress();renderQ();renderPalette()}
-  questionBox.appendChild(d);
- })
-}
-
-function renderPalette(){
- palette.innerHTML="";
- questions.forEach((_,i)=>{
-  let b=document.createElement("button");
-  b.innerText=i+1;
-  if(answers[i]!=null)b.className="answered";
-  else if(i===current)b.className="visited";
-  b.onclick=()=>{current=i;renderQ();renderPalette()}
-  palette.appendChild(b);
- })
-}
-
-function nextQ(){if(current<questions.length-1){current++;renderQ();renderPalette()}}
-function prevQ(){if(current>0){current--;renderQ();renderPalette()}}
-
-function startTimer(){
- clearInterval(timerInt);
- timerInt=setInterval(()=>{
-  timeLeft--;
-  timer.innerText=`Time Left: ${Math.floor(timeLeft/60)}:${timeLeft%60}`;
-  saveProgress();
-  if(timeLeft<=0)submitTest();
- },1000)
-}
-
-function saveProgress(){
- db.collection("attempts").doc(attemptId).update({answers,timeLeft})
-}
-
-function submitTest(){
- clearInterval(timerInt);
- let score=0;
- questions.forEach((q,i)=>{if(answers[i]===q.c)score++});
- db.collection("attempts").doc(attemptId).update({
-  completed:true,
-  score:`${score}/${questions.length}`
- }).then(()=>{
-  alert("Test Submitted");
-  location.reload();
- })
-}
-
-function shuffle(a){return a.sort(()=>Math.random()-0.5)}
 </script>
 
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+let testData = [];
+let currentTest = "";
+let student = {};
+
+window.teacherLogin = function(){
+  if(document.getElementById("teacherPin").value==="1914"){
+    teacherLoginBox(true);
+    loadClasses();
+  } else alert("Wrong PIN");
+}
+
+function teacherLoginBox(show){
+  teacherLogin.classList.toggle("hidden",show);
+  teacherPanel.classList.toggle("hidden",!show);
+}
+
+window.logoutTeacher=()=>teacherLoginBox(false);
+
+window.addQuestion = function(){
+  const q = document.createElement("div");
+  q.className="question";
+  q.innerHTML=`
+    <input placeholder="Question">
+    <input placeholder="Option A">
+    <input placeholder="Option B">
+    <input placeholder="Option C">
+    <input placeholder="Option D">
+    <select>
+      <option value="0">A</option>
+      <option value="1">B</option>
+      <option value="2">C</option>
+      <option value="3">D</option>
+    </select>`;
+  questions.appendChild(q);
+}
+
+window.saveTest = function(){
+  const cls=tClass.value,test=tName.value;
+  if(!cls||!test)return alert("Fill class & test");
+  let qs=[];
+  [...questions.children].forEach(q=>{
+    const i=q.querySelectorAll("input");
+    qs.push({
+      q:i[0].value,
+      o:[i[1].value,i[2].value,i[3].value,i[4].value],
+      a:q.querySelector("select").value
+    });
+  });
+  set(ref(db,`tests/${cls}/${test}`),qs);
+  alert("Test Saved");
+  questions.innerHTML="";
+}
+
+window.loadStudentTest = function(){
+  student={name:sName.value,roll:sRoll.value,class:sClass.value};
+  get(ref(db,`tests/${student.class}`)).then(s=>{
+    if(!s.exists())return alert("No test");
+    currentTest=Object.keys(s.val())[0];
+    testData=s.val()[currentTest];
+    const key=`${student.class}_${currentTest}_${student.roll}`;
+    get(ref(db,`attempts/${key}`)).then(a=>{
+      if(a.exists() && a.val().submitted)return alert("Already submitted");
+      renderStudentTest(a.exists()?a.val().answers:{});
+    });
+  });
+}
+
+function renderStudentTest(ans){
+  testTitle.innerText=currentTest;
+  studentQuestions.innerHTML="";
+  testData.forEach((q,i)=>{
+    studentQuestions.innerHTML+=`
+    <div class="question">
+    <p>${q.q}</p>
+    ${q.o.map((o,idx)=>`
+      <label><input type="radio" name="q${i}" value="${idx}" ${ans?.[i]==idx?"checked":""}> ${o}</label><br>`).join("")}
+    </div>`;
+  });
+  testBox.classList.remove("hidden");
+}
+
+window.submitTest=function(){
+  let answers={};
+  testData.forEach((_,i)=>{
+    const r=document.querySelector(`input[name=q${i}]:checked`);
+    if(r)answers[i]=r.value;
+  });
+  const key=`${student.class}_${currentTest}_${student.roll}`;
+  set(ref(db,`attempts/${key}`),{name:student.name,answers,submitted:true});
+  alert("Test Submitted");
+  testBox.classList.add("hidden");
+}
+
+function loadClasses(){
+  onValue(ref(db,"tests"),s=>{
+    viewClass.innerHTML="<option>Select Class</option>";
+    if(!s.exists())return;
+    Object.keys(s.val()).forEach(c=>{
+      viewClass.innerHTML+=`<option>${c}</option>`;
+    });
+  });
+}
+
+window.loadAttempts=function(){
+  const c=viewClass.value,t=viewTest.value;
+  if(!c)return;
+  onValue(ref(db,`tests/${c}`),s=>{
+    viewTest.innerHTML="<option>Select Test</option>";
+    Object.keys(s.val()).forEach(tn=>viewTest.innerHTML+=`<option>${tn}</option>`);
+  });
+  if(!t)return;
+  onValue(ref(db,"attempts"),s=>{
+    attempts.innerHTML="";
+    if(!s.exists())return;
+    Object.keys(s.val()).forEach(k=>{
+      if(k.startsWith(`${c}_${t}_`)){
+        attempts.innerHTML+=`<div>${s.val()[k].name}
+        <button onclick="remove(ref(db,'attempts/${k}'))">Reset</button></div>`;
+      }
+    });
+  });
+}
+</script>
 </body>
 </html>
