@@ -2,16 +2,33 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>School Test System</title>
+<title>School Online Test System</title>
+
 <style>
 body{font-family:Arial;background:#f4f4f4;padding:20px}
-.box{background:#fff;padding:15px;margin-bottom:20px;border-radius:5px}
+.box{background:#fff;padding:15px;margin-bottom:20px;border-radius:6px}
 .hidden{display:none}
 input,select,button{padding:8px;margin:5px;width:100%}
-button{cursor:pointer;background:#2b7cff;color:white;border:none}
+button{background:#2b7cff;color:#fff;border:none;cursor:pointer}
 .question{border:1px solid #ddd;padding:10px;margin:10px 0}
 </style>
+
+<!-- Firebase v8 -->
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+<script>
+firebase.initializeApp({
+  apiKey: "AIzaSyBQ2-dTUTPwhf7WqceEwXpk9CtPksR1xCk",
+  authDomain: "hera-mcqs-55022.firebaseapp.com",
+  databaseURL: "https://hera-mcqs-55022-default-rtdb.firebaseio.com",
+  projectId: "hera-mcqs-55022",
+  storageBucket: "hera-mcqs-55022.appspot.com"
+});
+const db = firebase.database();
+</script>
 </head>
+
 <body>
 
 <h2>Online Test System</h2>
@@ -29,21 +46,23 @@ button{cursor:pointer;background:#2b7cff;color:white;border:none}
 <button onclick="logoutTeacher()">Logout</button>
 
 <h4>Create Test</h4>
-<input id="tClass" placeholder="Class (e.g. 10A)">
+<input id="tClass" placeholder="Class (e.g. 10)">
 <input id="tName" placeholder="Test Name">
 
 <div id="questions"></div>
 <button onclick="addQuestion()">Add Question</button>
 <button onclick="saveTest()">Save Test</button>
 
+<hr>
+
 <h4>Student Attempts</h4>
-<select id="viewClass" onchange="loadAttempts()"></select>
+<select id="viewClass" onchange="loadTestsForAttempts()"></select>
 <select id="viewTest" onchange="loadAttempts()"></select>
 <div id="attempts"></div>
 </div>
 
 <!-- STUDENT PANEL -->
-<div id="studentPanel" class="box">
+<div class="box">
 <h3>Student Panel</h3>
 <input id="sName" placeholder="Student Name">
 <input id="sRoll" placeholder="Roll Number">
@@ -57,47 +76,27 @@ button{cursor:pointer;background:#2b7cff;color:white;border:none}
 </div>
 </div>
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-import { getDatabase, ref, set, get, remove, onValue } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-
 <script>
-firebase.initializeApp({
-  apiKey: "AIzaSyBQ2-dTUTPwhf7WqceEwXpk9CtPksR1xCk",
-  authDomain: "hera-mcqs-55022.firebaseapp.com",
-  databaseURL: "https://hera-mcqs-55022-default-rtdb.firebaseio.com",
-  projectId: "hera-mcqs-55022",
-  storageBucket: "hera-mcqs-55022.appspot.com"
-});
-</script>
+let testData=[], currentTest="", student={};
 
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
-
-let testData = [];
-let currentTest = "";
-let student = {};
-
-window.teacherLogin = function(){
-  if(document.getElementById("teacherPin").value==="1914"){
-    teacherLoginBox(true);
+/* TEACHER LOGIN */
+function teacherLogin(){
+  if(teacherPin.value==="1914"){
+    teacherLoginDiv(false);
     loadClasses();
   } else alert("Wrong PIN");
 }
-
-function teacherLoginBox(show){
-  teacherLogin.classList.toggle("hidden",show);
-  teacherPanel.classList.toggle("hidden",!show);
+function logoutTeacher(){ teacherLoginDiv(true); }
+function teacherLoginDiv(show){
+  teacherLogin.classList.toggle("hidden",!show);
+  teacherPanel.classList.toggle("hidden",show);
 }
 
-window.logoutTeacher=()=>teacherLoginBox(false);
-
-window.addQuestion = function(){
-  const q = document.createElement("div");
-  q.className="question";
-  q.innerHTML=`
+/* QUESTIONS */
+function addQuestion(){
+  let d=document.createElement("div");
+  d.className="question";
+  d.innerHTML=`
     <input placeholder="Question">
     <input placeholder="Option A">
     <input placeholder="Option B">
@@ -109,95 +108,86 @@ window.addQuestion = function(){
       <option value="2">C</option>
       <option value="3">D</option>
     </select>`;
-  questions.appendChild(q);
+  questions.appendChild(d);
 }
 
-window.saveTest = function(){
-  const cls=tClass.value,test=tName.value;
-  if(!cls||!test)return alert("Fill class & test");
+/* SAVE TEST */
+function saveTest(){
+  if(!tClass.value||!tName.value)return alert("Fill class & test name");
   let qs=[];
   [...questions.children].forEach(q=>{
-    const i=q.querySelectorAll("input");
-    qs.push({
-      q:i[0].value,
-      o:[i[1].value,i[2].value,i[3].value,i[4].value],
-      a:q.querySelector("select").value
-    });
+    let i=q.querySelectorAll("input");
+    qs.push({q:i[0].value,o:[i[1].value,i[2].value,i[3].value,i[4].value],a:q.querySelector("select").value});
   });
-  set(ref(db,`tests/${cls}/${test}`),qs);
+  firebase.database().ref(`tests/${tClass.value}/${tName.value}`).set(qs);
   alert("Test Saved");
   questions.innerHTML="";
 }
 
-window.loadStudentTest = function(){
+/* STUDENT */
+function loadStudentTest(){
   student={name:sName.value,roll:sRoll.value,class:sClass.value};
-  get(ref(db,`tests/${student.class}`)).then(s=>{
+  firebase.database().ref(`tests/${student.class}`).once("value",s=>{
     if(!s.exists())return alert("No test");
     currentTest=Object.keys(s.val())[0];
     testData=s.val()[currentTest];
-    const key=`${student.class}_${currentTest}_${student.roll}`;
-    get(ref(db,`attempts/${key}`)).then(a=>{
-      if(a.exists() && a.val().submitted)return alert("Already submitted");
-      renderStudentTest(a.exists()?a.val().answers:{});
+    let key=`${student.class}_${currentTest}_${student.roll}`;
+    firebase.database().ref(`attempts/${key}`).once("value",a=>{
+      if(a.exists()&&a.val().submitted)return alert("Already submitted");
+      renderTest(a.exists()?a.val().answers:{});
     });
   });
 }
-
-function renderStudentTest(ans){
+function renderTest(ans){
   testTitle.innerText=currentTest;
   studentQuestions.innerHTML="";
   testData.forEach((q,i)=>{
     studentQuestions.innerHTML+=`
     <div class="question">
     <p>${q.q}</p>
-    ${q.o.map((o,idx)=>`
-      <label><input type="radio" name="q${i}" value="${idx}" ${ans?.[i]==idx?"checked":""}> ${o}</label><br>`).join("")}
+    ${q.o.map((o,j)=>`<label><input type="radio" name="q${i}" value="${j}" ${ans[i]==j?"checked":""}> ${o}</label><br>`).join("")}
     </div>`;
   });
   testBox.classList.remove("hidden");
 }
-
-window.submitTest=function(){
-  let answers={};
+function submitTest(){
+  let ans={};
   testData.forEach((_,i)=>{
-    const r=document.querySelector(`input[name=q${i}]:checked`);
-    if(r)answers[i]=r.value;
+    let r=document.querySelector(`input[name=q${i}]:checked`);
+    if(r)ans[i]=r.value;
   });
-  const key=`${student.class}_${currentTest}_${student.roll}`;
-  set(ref(db,`attempts/${key}`),{name:student.name,answers,submitted:true});
-  alert("Test Submitted");
+  let key=`${student.class}_${currentTest}_${student.roll}`;
+  firebase.database().ref(`attempts/${key}`).set({name:student.name,answers:ans,submitted:true});
+  alert("Submitted");
   testBox.classList.add("hidden");
 }
 
+/* ATTEMPTS */
 function loadClasses(){
-  onValue(ref(db,"tests"),s=>{
+  firebase.database().ref("tests").on("value",s=>{
     viewClass.innerHTML="<option>Select Class</option>";
-    if(!s.exists())return;
-    Object.keys(s.val()).forEach(c=>{
-      viewClass.innerHTML+=`<option>${c}</option>`;
-    });
+    if(s.exists())Object.keys(s.val()).forEach(c=>viewClass.innerHTML+=`<option>${c}</option>`);
   });
 }
-
-window.loadAttempts=function(){
-  const c=viewClass.value,t=viewTest.value;
-  if(!c)return;
-  onValue(ref(db,`tests/${c}`),s=>{
+function loadTestsForAttempts(){
+  firebase.database().ref(`tests/${viewClass.value}`).once("value",s=>{
     viewTest.innerHTML="<option>Select Test</option>";
-    Object.keys(s.val()).forEach(tn=>viewTest.innerHTML+=`<option>${tn}</option>`);
+    if(s.exists())Object.keys(s.val()).forEach(t=>viewTest.innerHTML+=`<option>${t}</option>`);
   });
-  if(!t)return;
-  onValue(ref(db,"attempts"),s=>{
-    attempts.innerHTML="";
+}
+function loadAttempts(){
+  attempts.innerHTML="";
+  firebase.database().ref("attempts").once("value",s=>{
     if(!s.exists())return;
     Object.keys(s.val()).forEach(k=>{
-      if(k.startsWith(`${c}_${t}_`)){
+      if(k.startsWith(`${viewClass.value}_${viewTest.value}_`)){
         attempts.innerHTML+=`<div>${s.val()[k].name}
-        <button onclick="remove(ref(db,'attempts/${k}'))">Reset</button></div>`;
+        <button onclick="firebase.database().ref('attempts/${k}').remove()">Reset</button></div>`;
       }
     });
   });
 }
 </script>
+
 </body>
 </html>
