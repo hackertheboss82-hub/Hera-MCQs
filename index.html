@@ -1,280 +1,231 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
-<title>HERA MCQ TEST SYSTEM</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HERA MCQ SYSTEM</title>
 
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
 <style>
-body { background:#f4f6fb; user-select:none }
-.hidden { display:none }
-.option { border:1px solid #ccc; padding:10px; border-radius:8px; margin:6px 0; cursor:pointer }
-.option input { width:22px; height:22px; margin-right:10px }
-.palette button { width:42px; height:42px; border-radius:50%; margin:4px }
-.done { background:#22c55e; color:#fff }
-.current { background:#f59e0b; color:#fff }
-.pending { background:#d1d5db }
-.timer { font-weight:bold; color:#dc2626; text-align:center }
+body{font-family:Arial;background:#f1f5f9;margin:0}
+.box{width:95%;max-width:950px;margin:20px auto;background:#fff;padding:20px;border-radius:8px}
+input,select,textarea,button{width:100%;padding:8px;margin-top:8px}
+button{background:#2563eb;color:#fff;border:none;cursor:pointer}
+button:hover{background:#1e40af}
+.hidden{display:none}
+.option{border:1px solid #ccc;padding:10px;border-radius:6px;margin:8px 0;cursor:pointer}
+.option.active{background:#22c55e;color:white}
+.palette button{width:36px;margin:3px;border:none;border-radius:4px}
+.visited{background:#93c5fd}
+.answered{background:#22c55e;color:white}
+.timer{color:#dc2626;font-weight:bold;text-align:center}
 </style>
 </head>
 
-<body oncontextmenu="return false">
+<body>
 
-<header class="bg-primary text-white p-3 text-center">
-<h3>📘 HERA MCQ TEST SYSTEM</h3>
-</header>
+<div class="box" id="roleBox">
+  <h2>Select Role</h2>
+  <button onclick="showStudent()">Student</button>
+  <button onclick="showTeacher()">Teacher</button>
+</div>
 
-<div class="container my-4">
+<!-- STUDENT ENTRY -->
+<div class="box hidden" id="studentBox">
+  <h2>Student Entry</h2>
+  <input id="stuName" placeholder="Student Name">
+  <input id="stuRoll" placeholder="Roll No">
+  <select id="stuClass">
+    <option value="">Class</option>
+    <option>JR</option><option>SR</option>
+    <option>1</option><option>2</option><option>3</option>
+    <option>4</option><option>5</option><option>6</option>
+    <option>7</option><option>8</option><option>9</option><option>10</option>
+  </select>
+  <button onclick="studentLogin()">Continue</button>
+  <button onclick="back()">Back</button>
+</div>
 
-<!-- LOGIN -->
-<div class="card p-4" id="loginBox">
-<h4>Student / Teacher Login</h4>
+<!-- TEST LIST -->
+<div class="box hidden" id="testListBox">
+  <h3>Available Tests</h3>
+  <div id="tests"></div>
+</div>
 
-<select id="role" class="form-select mb-2">
-<option value="student">Student</option>
-<option value="teacher">Teacher</option>
-</select>
+<!-- TEST SCREEN -->
+<div class="box hidden" id="testBox">
+  <div class="timer" id="timer"></div>
+  <div class="palette" id="palette"></div>
+  <div id="questionBox"></div>
+  <button onclick="prevQ()">Prev</button>
+  <button onclick="nextQ()">Next</button>
+  <button onclick="submitTest()">Submit</button>
+</div>
 
-<input id="name" class="form-control mb-2" placeholder="Student Name">
-<input id="roll" class="form-control mb-2" placeholder="Roll Number">
-<select id="class" class="form-select mb-2">
-<option value="">Select Class</option>
-<option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
-<option>6</option><option>7</option><option>8</option><option>9</option><option>10</option>
-</select>
-
-<input id="pin" class="form-control mb-2 hidden" placeholder="Teacher PIN" type="password">
-
-<button class="btn btn-primary w-100" onclick="login()">Login</button>
+<!-- TEACHER LOGIN -->
+<div class="box hidden" id="teacherBox">
+  <h2>Teacher Login</h2>
+  <input type="password" id="teacherPin" placeholder="PIN">
+  <button onclick="teacherLogin()">Login</button>
+  <button onclick="back()">Back</button>
 </div>
 
 <!-- TEACHER PANEL -->
-<div class="card p-4 hidden" id="teacherPanel">
-<h4>Teacher Panel</h4>
-
-<input id="testTitle" class="form-control mb-2" placeholder="Test Name">
-<select id="testClass" class="form-select mb-2">
-<option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
-<option>6</option><option>7</option><option>8</option><option>9</option><option>10</option>
-</select>
-<input id="testTime" class="form-control mb-2" type="number" placeholder="Time (minutes)">
-
-<textarea id="questions" class="form-control mb-2" rows="10"
-placeholder="Question
-Option1
-Option2
-Option3
-Option4
-CorrectIndex(0-3)
-
-(repeat)"></textarea>
-
-<button class="btn btn-success" onclick="saveTest()">Save Test</button>
-
-<hr>
-<h5>Tests</h5>
-<div id="teacherTests"></div>
-
-<button class="btn btn-secondary mt-3" onclick="logout()">Logout</button>
-</div>
-
-<!-- STUDENT PANEL -->
-<div class="card p-4 hidden" id="studentPanel">
-<h4 id="testName"></h4>
-<div class="timer" id="timer"></div>
-<div id="questionBox"></div>
-
-<div class="d-flex justify-content-between mt-3">
-<button class="btn btn-secondary" onclick="prevQ()">Prev</button>
-<button class="btn btn-secondary" onclick="nextQ()">Next</button>
-<button class="btn btn-danger" onclick="submitConfirm()">Submit</button>
-</div>
-
-<div class="palette mt-3" id="palette"></div>
-</div>
-
+<div class="box hidden" id="teacherPanel">
+  <h2>Attempts</h2>
+  <table border="1" width="100%">
+    <thead>
+      <tr><th>Name</th><th>Roll</th><th>Class</th><th>Test</th><th>Score</th></tr>
+    </thead>
+    <tbody id="attempts"></tbody>
+  </table>
 </div>
 
 <script>
-const firebaseConfig = {
-apiKey: "AIzaSyBQ2-dTUTPwhf7WqceEwXpk9CtPksR1xCk",
-databaseURL: "https://hera-mcqs-55022-default-rtdb.firebaseio.com",
-projectId: "hera-mcqs-55022"
-};
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
-
-let role, studentKey, studentClass, testData, qIndex=0, answers={}, timerInt, timeLeft;
-
-/* ROLE CHANGE */
-role.onchange = () => {
-pin.classList.toggle("hidden", role.value !== "teacher");
-};
-
-/* LOGIN */
-function login(){
-if(role.value==="teacher"){
-if(pin.value!=="1914") return alert("Wrong PIN");
-loginBox.classList.add("hidden");
-teacherPanel.classList.remove("hidden");
-loadTeacherTests();
-return;
-}
-
-if(!name.value||!roll.value||!class.value) return alert("Fill all fields");
-studentClass = class.value;
-studentKey = `${studentClass}_${roll.value}_${name.value}`;
-
-loadStudentTest();
-}
-
-/* LOAD STUDENT TEST */
-function loadStudentTest(){
-db.ref(`attempts/${studentKey}`).once("value", a=>{
-if(a.exists() && a.val().submitted) return alert("Already submitted");
-
-db.ref(`tests/${studentClass}`).orderByChild("active").equalTo(true).limitToFirst(1)
-.once("value", s=>{
-if(!s.exists()) return alert("No active test");
-let k = Object.keys(s.val())[0];
-testData = s.val()[k];
-
-if(a.exists()){
-answers = a.val().answers||{};
-qIndex = a.val().qIndex||0;
-timeLeft = a.val().timeLeft;
-}else{
-answers={};
-timeLeft = testData.time*60;
-}
-
-startTest();
+/* FIREBASE */
+firebase.initializeApp({
+ apiKey:"AIzaSyBQ2-dTUTPwhf7WqceEwXpk9CtPksR1xCk",
+ authDomain:"hera-mcqs-55022.firebaseapp.com",
+ projectId:"hera-mcqs-55022"
 });
-});
-}
+const db=firebase.firestore();
 
-function startTest(){
-loginBox.classList.add("hidden");
-studentPanel.classList.remove("hidden");
-testName.innerText = testData.title;
-startTimer();
-showQ();
-}
+/* GLOBAL */
+let student={},testData={},questions=[],answers=[],current=0,timeLeft,timerInt,attemptId=null;
 
-/* QUESTIONS */
-function showQ(){
-let q = testData.questions[qIndex];
-questionBox.innerHTML = `<h5>${qIndex+1}. ${q.q}</h5>`;
-q.opts.forEach((o,i)=>{
-questionBox.innerHTML += `
-<div class="option">
-<input type="radio" name="opt" ${answers[qIndex]==i?"checked":""}
-onclick="answers[${qIndex}]=${i};saveProgress()">
-${o}
-</div>`;
-});
-drawPalette();
-}
-
-function nextQ(){ if(qIndex<testData.questions.length-1){ qIndex++; showQ(); saveProgress();}}
-function prevQ(){ if(qIndex>0){ qIndex--; showQ(); saveProgress();}}
-
-function drawPalette(){
-palette.innerHTML="";
-testData.questions.forEach((_,i)=>{
-let b=document.createElement("button");
-b.innerText=i+1;
-b.className=answers[i]!=null?"done":"pending";
-if(i===qIndex) b.className="current";
-b.onclick=()=>{qIndex=i;showQ()};
-palette.appendChild(b);
-});
-}
-
-/* TIMER */
-function startTimer(){
-timerInt=setInterval(()=>{
-timeLeft--;
-timer.innerText=`Time: ${Math.floor(timeLeft/60)}:${(timeLeft%60).toString().padStart(2,"0")}`;
-saveProgress();
-if(timeLeft<=0) submit();
-},1000);
-}
-
-/* SAVE PROGRESS */
-function saveProgress(){
-db.ref(`attempts/${studentKey}`).set({
-class:studentClass,
-test:testData.title,
-answers,
-qIndex,
-timeLeft,
-submitted:false
-});
-}
-
-/* SUBMIT */
-function submitConfirm(){ if(confirm("Submit test?")) submit(); }
-
-function submit(){
-clearInterval(timerInt);
-let score=0;
-testData.questions.forEach((q,i)=>{ if(answers[i]==q.ans) score++;});
-db.ref(`attempts/${studentKey}`).update({
-submitted:true,
-score:`${score}/${testData.questions.length}`,
-time:new Date().toLocaleString()
-});
-alert(`Submitted! Score: ${score}`);
-location.reload();
-}
+/* UI */
+function hideAll(){document.querySelectorAll(".box").forEach(b=>b.classList.add("hidden"))}
+function back(){hideAll();roleBox.classList.remove("hidden")}
+function showStudent(){hideAll();studentBox.classList.remove("hidden")}
+function showTeacher(){hideAll();teacherBox.classList.remove("hidden")}
 
 /* TEACHER */
-function saveTest(){
-let blocks=questions.value.trim().split(/\n\s*\n/);
-let qs=[];
-blocks.forEach(b=>{
-let l=b.split("\n");
-if(l.length>=6) qs.push({q:l[0],opts:l.slice(1,5),ans:+l[5]});
-});
-db.ref(`tests/${testClass.value}/${testTitle.value}`).set({
-title:testTitle.value,
-class:testClass.value,
-time:+testTime.value,
-questions:qs,
-active:true
-});
-alert("Saved");
-loadTeacherTests();
+function teacherLogin(){
+ if(teacherPin.value!=="1914"){alert("Wrong PIN");return}
+ hideAll();teacherPanel.classList.remove("hidden");
+ loadAttempts();
+}
+function loadAttempts(){
+ attempts.innerHTML="";
+ db.collection("attempts").get().then(s=>{
+  s.forEach(d=>{
+   let a=d.data();
+   attempts.innerHTML+=`<tr>
+    <td>${a.name}</td>
+    <td>${a.roll}</td>
+    <td>${a.class}</td>
+    <td>${a.test}</td>
+    <td>${a.score}</td>
+   </tr>`;
+  })
+ })
 }
 
-function loadTeacherTests(){
-teacherTests.innerHTML="";
-db.ref("tests").once("value",s=>{
-s.forEach(c=>{
-c.forEach(t=>{
-let d=t.val();
-teacherTests.innerHTML+=`
-<div>${d.title} (${c.key})
-<button onclick="toggle('${c.key}','${d.title}',${!d.active})">
-${d.active?"Deactivate":"Activate"}
-</button></div>`;
-});
-});
-});
+/* STUDENT */
+function studentLogin(){
+ if(!stuName.value||!stuRoll.value||!stuClass.value){alert("Fill all");return}
+ student={name:stuName.value,roll:stuRoll.value,class:stuClass.value};
+ hideAll();testListBox.classList.remove("hidden");
+ loadTests();
 }
 
-function toggle(cls,title,val){
-db.ref(`tests/${cls}/${title}/active`).set(val);
-loadTeacherTests();
+function loadTests(){
+ tests.innerHTML="";
+ db.collection("tests").where("class","==",student.class).get().then(s=>{
+  s.forEach(d=>{
+   let b=document.createElement("button");
+   b.innerText=d.data().name;
+   b.onclick=()=>startTest(d.id,d.data());
+   tests.appendChild(b);
+  })
+ })
 }
 
-function logout(){ location.reload(); }
+function startTest(id,data){
+ db.collection("attempts")
+ .where("roll","==",student.roll)
+ .where("test","==",id)
+ .get().then(s=>{
+   if(!s.empty){
+     let a=s.docs[0].data();
+     if(a.completed){alert("Already attempted");return}
+     attemptId=s.docs[0].id;
+     questions=a.questions;answers=a.answers;timeLeft=a.timeLeft;
+     beginTest();
+   }else{
+     questions=shuffle(data.questions).slice(0,30);
+     answers=new Array(questions.length).fill(null);
+     timeLeft=data.time*60;
+     db.collection("attempts").add({
+       name:student.name,roll:student.roll,class:student.class,
+       test:id,questions,answers,timeLeft,completed:false
+     }).then(r=>{attemptId=r.id;beginTest()})
+   }
+ })
+}
+
+function beginTest(){
+ hideAll();testBox.classList.remove("hidden");
+ renderQ();renderPalette();startTimer();
+}
+
+function renderQ(){
+ let q=questions[current];
+ questionBox.innerHTML=`<h4>${current+1}. ${q.q}</h4>`;
+ q.o.forEach((o,i)=>{
+  let d=document.createElement("div");
+  d.className="option";
+  if(answers[current]===i)d.classList.add("active");
+  d.innerText=o;
+  d.onclick=()=>{answers[current]=i;saveProgress();renderQ();renderPalette()}
+  questionBox.appendChild(d);
+ })
+}
+
+function renderPalette(){
+ palette.innerHTML="";
+ questions.forEach((_,i)=>{
+  let b=document.createElement("button");
+  b.innerText=i+1;
+  if(answers[i]!=null)b.className="answered";
+  else if(i===current)b.className="visited";
+  b.onclick=()=>{current=i;renderQ();renderPalette()}
+  palette.appendChild(b);
+ })
+}
+
+function nextQ(){if(current<questions.length-1){current++;renderQ();renderPalette()}}
+function prevQ(){if(current>0){current--;renderQ();renderPalette()}}
+
+function startTimer(){
+ clearInterval(timerInt);
+ timerInt=setInterval(()=>{
+  timeLeft--;
+  timer.innerText=`Time Left: ${Math.floor(timeLeft/60)}:${timeLeft%60}`;
+  saveProgress();
+  if(timeLeft<=0)submitTest();
+ },1000)
+}
+
+function saveProgress(){
+ db.collection("attempts").doc(attemptId).update({answers,timeLeft})
+}
+
+function submitTest(){
+ clearInterval(timerInt);
+ let score=0;
+ questions.forEach((q,i)=>{if(answers[i]===q.c)score++});
+ db.collection("attempts").doc(attemptId).update({
+  completed:true,
+  score:`${score}/${questions.length}`
+ }).then(()=>{
+  alert("Test Submitted");
+  location.reload();
+ })
+}
+
+function shuffle(a){return a.sort(()=>Math.random()-0.5)}
 </script>
 
 </body>
