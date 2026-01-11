@@ -293,4 +293,10 @@ CorrectIndex (0-3)
                 s.forEach(a => { if (a.val().test === currentTest.title) attempted = true; });
                 if (attempted) return showError("Already attempted.");
                 loginBox.classList.add("hidden");
-                studentPanel.class
+                studentPanel.classList.remove("hidden");
+                currentTest.questions = shuffle(currentTest.questions).slice(0, 30);
+                timeLeft = currentTest.time * 60;
+                startTimer();
+                showQ();
+                updateProgress();
+                start
