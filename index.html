@@ -37,7 +37,7 @@ const db = firebase.database();
 <div id="teacherLogin" class="box">
 <h3>Teacher Login</h3>
 <input type="password" id="teacherPin" placeholder="Enter PIN">
-<button onclick="teacherLogin()">Login</button>
+<button onclick="doTeacherLogin()">Login</button>
 </div>
 
 <!-- TEACHER PANEL -->
@@ -79,17 +79,21 @@ const db = firebase.database();
 <script>
 let testData=[], currentTest="", student={};
 
+const teacherLoginDiv = document.getElementById("teacherLogin");
+const teacherPanelDiv = document.getElementById("teacherPanel");
+
 /* TEACHER LOGIN */
-function teacherLogin(){
+function doTeacherLogin(){
   if(teacherPin.value==="1914"){
-    teacherLoginDiv(false);
+    teacherLoginDiv.classList.add("hidden");
+    teacherPanelDiv.classList.remove("hidden");
     loadClasses();
   } else alert("Wrong PIN");
 }
-function logoutTeacher(){ teacherLoginDiv(true); }
-function teacherLoginDiv(show){
-  teacherLogin.classList.toggle("hidden",!show);
-  teacherPanel.classList.toggle("hidden",show);
+
+function logoutTeacher(){
+  teacherPanelDiv.classList.add("hidden");
+  teacherLoginDiv.classList.remove("hidden");
 }
 
 /* QUESTIONS */
@@ -117,9 +121,13 @@ function saveTest(){
   let qs=[];
   [...questions.children].forEach(q=>{
     let i=q.querySelectorAll("input");
-    qs.push({q:i[0].value,o:[i[1].value,i[2].value,i[3].value,i[4].value],a:q.querySelector("select").value});
+    qs.push({
+      q:i[0].value,
+      o:[i[1].value,i[2].value,i[3].value,i[4].value],
+      a:q.querySelector("select").value
+    });
   });
-  firebase.database().ref(`tests/${tClass.value}/${tName.value}`).set(qs);
+  db.ref(`tests/${tClass.value}/${tName.value}`).set(qs);
   alert("Test Saved");
   questions.innerHTML="";
 }
@@ -127,62 +135,85 @@ function saveTest(){
 /* STUDENT */
 function loadStudentTest(){
   student={name:sName.value,roll:sRoll.value,class:sClass.value};
-  firebase.database().ref(`tests/${student.class}`).once("value",s=>{
-    if(!s.exists())return alert("No test");
+  db.ref(`tests/${student.class}`).once("value",s=>{
+    if(!s.exists())return alert("No test for this class");
     currentTest=Object.keys(s.val())[0];
     testData=s.val()[currentTest];
+
     let key=`${student.class}_${currentTest}_${student.roll}`;
-    firebase.database().ref(`attempts/${key}`).once("value",a=>{
-      if(a.exists()&&a.val().submitted)return alert("Already submitted");
+    db.ref(`attempts/${key}`).once("value",a=>{
+      if(a.exists() && a.val().submitted)
+        return alert("Test already submitted");
       renderTest(a.exists()?a.val().answers:{});
     });
   });
 }
+
 function renderTest(ans){
   testTitle.innerText=currentTest;
   studentQuestions.innerHTML="";
   testData.forEach((q,i)=>{
     studentQuestions.innerHTML+=`
-    <div class="question">
-    <p>${q.q}</p>
-    ${q.o.map((o,j)=>`<label><input type="radio" name="q${i}" value="${j}" ${ans[i]==j?"checked":""}> ${o}</label><br>`).join("")}
-    </div>`;
+      <div class="question">
+      <p>${q.q}</p>
+      ${q.o.map((o,j)=>`
+        <label>
+          <input type="radio" name="q${i}" value="${j}" ${ans[i]==j?"checked":""}>
+          ${o}
+        </label><br>`).join("")}
+      </div>`;
   });
   testBox.classList.remove("hidden");
 }
+
 function submitTest(){
   let ans={};
   testData.forEach((_,i)=>{
     let r=document.querySelector(`input[name=q${i}]:checked`);
-    if(r)ans[i]=r.value;
+    if(r) ans[i]=r.value;
   });
   let key=`${student.class}_${currentTest}_${student.roll}`;
-  firebase.database().ref(`attempts/${key}`).set({name:student.name,answers:ans,submitted:true});
-  alert("Submitted");
+  db.ref(`attempts/${key}`).set({
+    name:student.name,
+    answers:ans,
+    submitted:true
+  });
+  alert("Test Submitted");
   testBox.classList.add("hidden");
 }
 
 /* ATTEMPTS */
 function loadClasses(){
-  firebase.database().ref("tests").on("value",s=>{
+  db.ref("tests").on("value",s=>{
     viewClass.innerHTML="<option>Select Class</option>";
-    if(s.exists())Object.keys(s.val()).forEach(c=>viewClass.innerHTML+=`<option>${c}</option>`);
+    if(s.exists())
+      Object.keys(s.val()).forEach(c=>{
+        viewClass.innerHTML+=`<option>${c}</option>`;
+      });
   });
 }
+
 function loadTestsForAttempts(){
-  firebase.database().ref(`tests/${viewClass.value}`).once("value",s=>{
-    viewTest.innerHTML="<option>Select Test</option>";
-    if(s.exists())Object.keys(s.val()).forEach(t=>viewTest.innerHTML+=`<option>${t}</option>`);
+  viewTest.innerHTML="<option>Select Test</option>";
+  db.ref(`tests/${viewClass.value}`).once("value",s=>{
+    if(s.exists())
+      Object.keys(s.val()).forEach(t=>{
+        viewTest.innerHTML+=`<option>${t}</option>`;
+      });
   });
 }
+
 function loadAttempts(){
   attempts.innerHTML="";
-  firebase.database().ref("attempts").once("value",s=>{
+  db.ref("attempts").once("value",s=>{
     if(!s.exists())return;
     Object.keys(s.val()).forEach(k=>{
       if(k.startsWith(`${viewClass.value}_${viewTest.value}_`)){
-        attempts.innerHTML+=`<div>${s.val()[k].name}
-        <button onclick="firebase.database().ref('attempts/${k}').remove()">Reset</button></div>`;
+        attempts.innerHTML+=`
+          <div>
+            ${s.val()[k].name}
+            <button onclick="db.ref('attempts/${k}').remove()">Reset</button>
+          </div>`;
       }
     });
   });
