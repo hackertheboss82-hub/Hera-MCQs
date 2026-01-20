@@ -118,11 +118,94 @@ auth.onAuthStateChanged(user => {
     teacherPanel.style.display = "none";
   }
 });
+<hr>
+
+<h3>Create New Test</h3>
+
+<select id="testClass">
+  <option value="">Select Class</option>
+  <option value="10">Class 10</option>
+  <option value="9">Class 9</option>
+  <option value="8">Class 8</option>
+</select>
+
+<input type="text" id="testName" placeholder="Test Name (e.g. Science Chapter 1)">
+
+<textarea id="bulkQuestions" rows="8" placeholder="
+FORMAT (one question per line):
+
+Question | Option A | Option B | Option C | Option D | CorrectIndex
+
+Example:
+Water formula? | H2O | CO2 | NaCl | O2 | 0
+"></textarea>
+
+<button onclick="saveTest()">Save Test</button>
+
+<p id="saveMsg"></p>
 
 /* 🚪 LOGOUT */
 function logout() {
   auth.signOut();
 }
+/* 📝 SAVE TEST */
+function saveTest() {
+  const cls = document.getElementById("testClass").value;
+  const name = document.getElementById("testName").value.trim();
+  const raw = document.getElementById("bulkQuestions").value.trim();
+  const msg = document.getElementById("saveMsg");
+
+  msg.innerText = "";
+
+  if (!cls || !name || !raw) {
+    msg.innerText = "All fields are required";
+    msg.style.color = "red";
+    return;
+  }
+
+  const lines = raw.split("\n");
+  let questions = [];
+
+  for (let line of lines) {
+    const parts = line.split("|").map(p => p.trim());
+
+    if (parts.length !== 6) {
+      msg.innerText = "Invalid question format";
+      msg.style.color = "red";
+      return;
+    }
+
+    questions.push({
+      q: parts[0],
+      options: [parts[1], parts[2], parts[3], parts[4]],
+      answer: Number(parts[5])
+    });
+  }
+
+  firebase.database()
+    .ref(`tests/class_${cls}/${name}`)
+    .set({
+      meta: {
+        class: cls,
+        name: name,
+        createdBy: auth.currentUser.email,
+        createdAt: Date.now()
+      },
+      questions: questions
+    })
+    .then(() => {
+      msg.innerText = "Test saved successfully ✅";
+      msg.style.color = "green";
+
+      document.getElementById("testName").value = "";
+      document.getElementById("bulkQuestions").value = "";
+    })
+    .catch(err => {
+      msg.innerText = err.message;
+      msg.style.color = "red";
+    });
+}
+
 </script>
 
 </body>
