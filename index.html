@@ -1,222 +1,127 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="UTF-8">
-<title>School Online Test System</title>
+  <meta charset="UTF-8">
+  <title>Hera MCQ System</title>
 
-<style>
-body{font-family:Arial;background:#f4f4f4;padding:20px}
-.box{background:#fff;padding:15px;margin-bottom:20px;border-radius:6px}
-.hidden{display:none}
-input,select,button{padding:8px;margin:5px;width:100%}
-button{background:#2b7cff;color:#fff;border:none;cursor:pointer}
-.question{border:1px solid #ddd;padding:10px;margin:10px 0}
-</style>
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
-<!-- Firebase v8 -->
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-
-<script>
-firebase.initializeApp({
-  apiKey: "AIzaSyBQ2-dTUTPwhf7WqceEwXpk9CtPksR1xCk",
-  authDomain: "hera-mcqs-55022.firebaseapp.com",
-  databaseURL: "https://hera-mcqs-55022-default-rtdb.firebaseio.com",
-  projectId: "hera-mcqs-55022",
-  storageBucket: "hera-mcqs-55022.appspot.com"
-});
-const db = firebase.database();
-</script>
+  <style>
+    body {
+      font-family: Arial;
+      background: #f4f6f8;
+    }
+    .box {
+      width: 360px;
+      margin: 80px auto;
+      padding: 20px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 0 10px #ccc;
+    }
+    input, button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+    }
+    button {
+      cursor: pointer;
+    }
+    #teacherPanel {
+      display: none;
+    }
+    .success {
+      color: green;
+    }
+    .error {
+      color: red;
+    }
+  </style>
 </head>
 
 <body>
 
-<h2>Online Test System</h2>
+<!-- 🔐 TEACHER LOGIN -->
+<div class="box" id="loginBox">
+  <h2>Teacher Login</h2>
 
-<!-- TEACHER LOGIN -->
-<div id="teacherLogin" class="box">
-<h3>Teacher Login</h3>
-<input type="password" id="teacherPin" placeholder="Enter PIN">
-<button onclick="doTeacherLogin()">Login</button>
+  <input type="email" id="tEmail" placeholder="Email">
+  <input type="password" id="tPassword" placeholder="Password">
+
+  <button onclick="teacherLogin()">Login</button>
+
+  <p id="loginMsg" class="error"></p>
 </div>
 
-<!-- TEACHER PANEL -->
-<div id="teacherPanel" class="box hidden">
-<h3>Teacher Panel</h3>
-<button onclick="logoutTeacher()">Logout</button>
+<!-- 👨‍🏫 TEACHER PANEL -->
+<div class="box" id="teacherPanel">
+  <h2>Welcome Teacher 👨‍🏫</h2>
 
-<h4>Create Test</h4>
-<input id="tClass" placeholder="Class (e.g. 10)">
-<input id="tName" placeholder="Test Name">
+  <p class="success">Login successful ✔</p>
 
-<div id="questions"></div>
-<button onclick="addQuestion()">Add Question</button>
-<button onclick="saveTest()">Save Test</button>
+  <p>
+    ✔ Phase 0: Firebase connected<br>
+    ✔ Phase 1: Teacher authentication working
+  </p>
 
-<hr>
+  <hr>
 
-<h4>Student Attempts</h4>
-<select id="viewClass" onchange="loadTestsForAttempts()"></select>
-<select id="viewTest" onchange="loadAttempts()"></select>
-<div id="attempts"></div>
-</div>
+  <p><b>Next:</b> Test creation UI will appear here</p>
 
-<!-- STUDENT PANEL -->
-<div class="box">
-<h3>Student Panel</h3>
-<input id="sName" placeholder="Student Name">
-<input id="sRoll" placeholder="Roll Number">
-<input id="sClass" placeholder="Class">
-<button onclick="loadStudentTest()">Load Test</button>
-
-<div id="testBox" class="hidden">
-<h3 id="testTitle"></h3>
-<div id="studentQuestions"></div>
-<button onclick="submitTest()">Submit Test</button>
-</div>
+  <button onclick="logout()">Logout</button>
 </div>
 
 <script>
-let testData=[], currentTest="", student={};
+/* 🔥 FIREBASE INIT */
+firebase.initializeApp({
+  apiKey: "AIzaSyBQ2-dTUTPwhf7WqceEwXpk9CtPksR1xCk",
+  authDomain: "hera-mcqs-55022.firebaseapp.com",
+  projectId: "hera-mcqs-55022",
+  databaseURL: "https://hera-mcqs-55022-default-rtdb.firebaseio.com"
+});
 
-const teacherLoginDiv = document.getElementById("teacherLogin");
-const teacherPanelDiv = document.getElementById("teacherPanel");
+const auth = firebase.auth();
 
-/* TEACHER LOGIN */
-function doTeacherLogin(){
-  if(teacherPin.value==="1914"){
-    teacherLoginDiv.classList.add("hidden");
-    teacherPanelDiv.classList.remove("hidden");
-    loadClasses();
-  } else alert("Wrong PIN");
-}
+/* 🔐 TEACHER LOGIN */
+function teacherLogin() {
+  const email = document.getElementById("tEmail").value.trim();
+  const pass  = document.getElementById("tPassword").value.trim();
+  const msg   = document.getElementById("loginMsg");
 
-function logoutTeacher(){
-  teacherPanelDiv.classList.add("hidden");
-  teacherLoginDiv.classList.remove("hidden");
-}
+  msg.innerText = "";
 
-/* QUESTIONS */
-function addQuestion(){
-  let d=document.createElement("div");
-  d.className="question";
-  d.innerHTML=`
-    <input placeholder="Question">
-    <input placeholder="Option A">
-    <input placeholder="Option B">
-    <input placeholder="Option C">
-    <input placeholder="Option D">
-    <select>
-      <option value="0">A</option>
-      <option value="1">B</option>
-      <option value="2">C</option>
-      <option value="3">D</option>
-    </select>`;
-  questions.appendChild(d);
-}
+  if (!email || !pass) {
+    msg.innerText = "Enter email and password";
+    return;
+  }
 
-/* SAVE TEST */
-function saveTest(){
-  if(!tClass.value||!tName.value)return alert("Fill class & test name");
-  let qs=[];
-  [...questions.children].forEach(q=>{
-    let i=q.querySelectorAll("input");
-    qs.push({
-      q:i[0].value,
-      o:[i[1].value,i[2].value,i[3].value,i[4].value],
-      a:q.querySelector("select").value
+  auth.signInWithEmailAndPassword(email, pass)
+    .then(() => {
+      loginBox.style.display = "none";
+      teacherPanel.style.display = "block";
+    })
+    .catch(err => {
+      msg.innerText = err.message;
     });
-  });
-  db.ref(`tests/${tClass.value}/${tName.value}`).set(qs);
-  alert("Test Saved");
-  questions.innerHTML="";
 }
 
-/* STUDENT */
-function loadStudentTest(){
-  student={name:sName.value,roll:sRoll.value,class:sClass.value};
-  db.ref(`tests/${student.class}`).once("value",s=>{
-    if(!s.exists())return alert("No test for this class");
-    currentTest=Object.keys(s.val())[0];
-    testData=s.val()[currentTest];
+/* 🔄 SESSION CHECK */
+auth.onAuthStateChanged(user => {
+  if (user) {
+    loginBox.style.display = "none";
+    teacherPanel.style.display = "block";
+  } else {
+    loginBox.style.display = "block";
+    teacherPanel.style.display = "none";
+  }
+});
 
-    let key=`${student.class}_${currentTest}_${student.roll}`;
-    db.ref(`attempts/${key}`).once("value",a=>{
-      if(a.exists() && a.val().submitted)
-        return alert("Test already submitted");
-      renderTest(a.exists()?a.val().answers:{});
-    });
-  });
-}
-
-function renderTest(ans){
-  testTitle.innerText=currentTest;
-  studentQuestions.innerHTML="";
-  testData.forEach((q,i)=>{
-    studentQuestions.innerHTML+=`
-      <div class="question">
-      <p>${q.q}</p>
-      ${q.o.map((o,j)=>`
-        <label>
-          <input type="radio" name="q${i}" value="${j}" ${ans[i]==j?"checked":""}>
-          ${o}
-        </label><br>`).join("")}
-      </div>`;
-  });
-  testBox.classList.remove("hidden");
-}
-
-function submitTest(){
-  let ans={};
-  testData.forEach((_,i)=>{
-    let r=document.querySelector(`input[name=q${i}]:checked`);
-    if(r) ans[i]=r.value;
-  });
-  let key=`${student.class}_${currentTest}_${student.roll}`;
-  db.ref(`attempts/${key}`).set({
-    name:student.name,
-    answers:ans,
-    submitted:true
-  });
-  alert("Test Submitted");
-  testBox.classList.add("hidden");
-}
-
-/* ATTEMPTS */
-function loadClasses(){
-  db.ref("tests").on("value",s=>{
-    viewClass.innerHTML="<option>Select Class</option>";
-    if(s.exists())
-      Object.keys(s.val()).forEach(c=>{
-        viewClass.innerHTML+=`<option>${c}</option>`;
-      });
-  });
-}
-
-function loadTestsForAttempts(){
-  viewTest.innerHTML="<option>Select Test</option>";
-  db.ref(`tests/${viewClass.value}`).once("value",s=>{
-    if(s.exists())
-      Object.keys(s.val()).forEach(t=>{
-        viewTest.innerHTML+=`<option>${t}</option>`;
-      });
-  });
-}
-
-function loadAttempts(){
-  attempts.innerHTML="";
-  db.ref("attempts").once("value",s=>{
-    if(!s.exists())return;
-    Object.keys(s.val()).forEach(k=>{
-      if(k.startsWith(`${viewClass.value}_${viewTest.value}_`)){
-        attempts.innerHTML+=`
-          <div>
-            ${s.val()[k].name}
-            <button onclick="db.ref('attempts/${k}').remove()">Reset</button>
-          </div>`;
-      }
-    });
-  });
+/* 🚪 LOGOUT */
+function logout() {
+  auth.signOut();
 }
 </script>
 
