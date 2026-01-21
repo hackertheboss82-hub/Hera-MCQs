@@ -127,7 +127,7 @@ Water formula? | H2O | CO2 | NaCl | O2 | 0
     <option value="">Select Test</option>
   </select>
 
-<button onclick="startTest()">Start / Resume Test</button>
+<button onclick="startStudentTest()">Start / Resume Test</button>
 
   <div id="studentMsg" class="error"></div>
 </div>
@@ -306,7 +306,16 @@ function startStudentTest() {
 }
 
 
-function renderQuestions() {
+function renderStudentTest(questions, savedAnswers) {
+  currentQuestions = Object.values(questions);
+  studentAnswers = savedAnswers || {};
+
+  document.getElementById("testArea").style.display = "block";
+  document.getElementById("questionBox").innerHTML = "";
+
+  renderQuestions();
+}
+
   const box = document.getElementById("questionBox");
   box.innerHTML = "";
 
@@ -316,24 +325,26 @@ function renderQuestions() {
 
     let html = `<b>${index + 1}. ${q.q}</b><br>`;
 
-    q.options.forEach((opt, i) => {
-      const checked = studentAnswers[index] == i ? "checked" : "";
-      html += `
-        <label>
-          <input type="radio"
-       name="q${i}"
-       value="${j}"
-       onchange="autoSaveAnswer(${i}, ${j})">
-          ${opt}
-        </label><br>`;
-    });
+   q.options.forEach((opt, j) => {
+  const checked = studentAnswers[index] == j ? "checked" : "";
+  html += `
+    <label>
+      <input type="radio"
+        name="q${index}"
+        value="${j}"
+        ${checked}
+        onchange="autoSaveAnswer(${index}, ${j})">
+      ${opt}
+    </label><br>`;
+});
 
     div.innerHTML = html;
     box.appendChild(div);
   });
 }
+  
 function autoSaveAnswer(qIndex, value) {
-  if (!currentStudent || !currentTest) return;
+  studentAnswers[qIndex] = value;
 
   firebase.database().ref(
     `attempts/class_${currentStudent.class}/${currentTest}/${currentStudent.roll}`
@@ -341,27 +352,13 @@ function autoSaveAnswer(qIndex, value) {
     name: currentStudent.name,
     roll: currentStudent.roll,
     class: currentStudent.class,
-    answers: {
-      [qIndex]: value
-    },
+    answers: studentAnswers,
     inProgress: true,
     submitted: false,
     lastUpdated: Date.now()
   });
 }
 
-  function saveAnswer(qIndex, ans) {
-  studentAnswers[qIndex] = ans;
-
-  firebase.database()
-    .ref("attempts/" + studentKey)
-    .set({
-      answers: studentAnswers,
-      lastSaved: Date.now()
-    });
-}
-
-  
 /* 🔄 SESSION CHECK */
 auth.onAuthStateChanged(user => {
   if (user) {
@@ -476,6 +473,7 @@ document.getElementById("testName").disabled = false;
 
 </body>
 </html>
+
 
 
 
