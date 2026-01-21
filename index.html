@@ -27,7 +27,7 @@
       padding: 10px;
       margin-top: 10px;
     }
-    button {
+     {
       cursor: pointer;
     }
     #teacherPanel {
@@ -51,7 +51,7 @@
   <input type="email" id="tEmail" placeholder="Email">
   <input type="password" id="tPassword" placeholder="Password">
 
-  <button onclick="teacherLogin()">Login</button>
+  < onclick="teacherLogin()">Login</>
 
   <p id="loginMsg" class="error"></p>
 </div>
@@ -90,7 +90,7 @@ Example:
 Water formula? | H2O | CO2 | NaCl | O2 | 0
 "></textarea>
 
-<button onclick="saveTest()">Save Test</button>
+< onclick="saveTest()">Save Test</>
 
 <p id="saveMsg"></p>
 
@@ -108,7 +108,7 @@ Water formula? | H2O | CO2 | NaCl | O2 | 0
 
 <div id="testList" style="margin-top:10px;"></div>
 
-  <button onclick="logout()">Logout</button>
+  < onclick="logout()">Logout</>
 </div>
 <!-- 👨‍🎓 STUDENT PANEL -->
 <div class="box" id="studentPanel">
@@ -128,7 +128,6 @@ Water formula? | H2O | CO2 | NaCl | O2 | 0
   </select>
 
 <button onclick="startStudentTest()">Start / Resume Test</button>
-
   <div id="studentMsg" class="error"></div>
 </div>
 <div id="testArea" style="display:none">
@@ -261,7 +260,7 @@ function loadStudentTests() {
     });
 }
 function startStudentTest() {
-
+  console.log("Start Test Clicked");
   const sName = document.getElementById("studentName").value.trim();
   const sRoll = document.getElementById("studentRoll").value.trim();
   const sClass = document.getElementById("studentClass").value;
@@ -508,6 +507,7 @@ document.getElementById("testName").disabled = false;
 
 </body>
 </html>
+
 
 
 
