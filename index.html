@@ -261,34 +261,40 @@ function loadStudentTests() {
     });
 }
 function startStudentTest() {
-  const name = document.getElementById("sName").value.trim();
-  const roll = document.getElementById("sRoll").value.trim();
-  const cls  = document.getElementById("sClass").value;
-  const test = document.getElementById("studentTestSelect").value;
 
-  if (!name || !roll || !cls || !test) {
-    alert("Fill all details");
+  const sName = document.getElementById("studentName").value.trim();
+  const sRoll = document.getElementById("studentRoll").value.trim();
+  const sClass = document.getElementById("studentClass").value;
+  const testName = document.getElementById("testSelect").value;
+
+  if (!sName || !sRoll || !sClass || !testName) {
+    alert("Please fill all fields");
     return;
   }
 
-  currentStudent = { name, roll, class: cls };
-  currentTest = test;
+  currentStudent = {
+    name: sName,
+    roll: sRoll,
+    class: sClass,
+    test: testName
+  };
 
-  // 1️⃣ Load questions
+  // Load test questions
   firebase.database()
-    .ref(`tests/class_${cls}/${test}/questions`)
+    .ref(`tests/${sClass}/${testName}`)
     .once("value")
-    .then(qSnap => {
-      const questions = qSnap.val();
+    .then(testSnap => {
 
-      if (!questions) {
-        alert("No questions found");
+      if (!testSnap.exists()) {
+        alert("Test not found");
         return;
       }
 
-      // 2️⃣ Load saved attempt (VERY IMPORTANT)
+      const questions = testSnap.val().questions;
+
+      // Load saved attempt
       firebase.database()
-        .ref(`attempts/class_${cls}/${test}/${roll}`)
+        .ref(`attempts/${sClass}/${testName}/${sRoll}`)
         .once("value")
         .then(aSnap => {
 
@@ -302,62 +308,91 @@ function startStudentTest() {
             savedAnswers = aSnap.val().answers || {};
           }
 
+          // ✅ THIS WAS MISSING (VERY IMPORTANT)
+          renderStudentTest(questions, savedAnswers);
+
+        });
+    });
+}
+
           // 3️⃣ Render test with saved answers
   
-  function renderStudentTest(questions, savedAnswers) {
-  document.getElementById("studentPanel").style.display = "none";
-  document.getElementById("testArea").style.display = "block";
+function renderStudentTest(questions, savedAnswers) {
 
-  currentQuestions = Object.values(questions);
-  studentAnswers = savedAnswers || {};
+  document.getElementById("studentPanel").style.display = "none";
+  document.getElementById("studentTestPanel").style.display = "block";
+
+  document.getElementById("testTitle").innerText =
+    `${currentStudent.test} (Class ${currentStudent.class})`;
+
+  window.currentQuestions = questions;
+  window.currentAnswers = savedAnswers || {};
 
   renderQuestions();
 }
 
 
 function renderQuestions() {
-  const box = document.getElementById("questionBox");
+
+  const box = document.getElementById("questionsBox");
   box.innerHTML = "";
 
-  currentQuestions.forEach((q, index) => {
-    const div = document.createElement("div");
-    div.className = "question";
+  currentQuestions.forEach((q, i) => {
 
-    let html = `<b>${index + 1}. ${q.q}</b><br>`;
+    const selected = currentAnswers[i] || "";
 
-    q.options.forEach((opt, j) => {
-      const checked = studentAnswers[index] == j ? "checked" : "";
-      html += `
+    box.innerHTML += `
+      <div class="question">
+        <p><b>Q${i + 1}.</b> ${q.question}</p>
+
         <label>
-          <input type="radio"
-            name="q${index}"
-            value="${j}"
-            ${checked}
-            onchange="autoSaveAnswer(${index}, ${j})">
-          ${opt}
-        </label><br>`;
-    });
+          <input type="radio" name="q${i}" value="0"
+            ${selected == 0 ? "checked" : ""}
+            onchange="autoSaveAnswer(${i},0)">
+          ${q.options[0]}
+        </label><br>
 
-    div.innerHTML = html;
-    box.appendChild(div);
+        <label>
+          <input type="radio" name="q${i}" value="1"
+            ${selected == 1 ? "checked" : ""}
+            onchange="autoSaveAnswer(${i},1)">
+          ${q.options[1]}
+        </label><br>
+
+        <label>
+          <input type="radio" name="q${i}" value="2"
+            ${selected == 2 ? "checked" : ""}
+            onchange="autoSaveAnswer(${i},2)">
+          ${q.options[2]}
+        </label><br>
+
+        <label>
+          <input type="radio" name="q${i}" value="3"
+            ${selected == 3 ? "checked" : ""}
+            onchange="autoSaveAnswer(${i},3)">
+          ${q.options[3]}
+        </label>
+      </div>
+      <hr>
+    `;
   });
 }
+
   
 function autoSaveAnswer(qIndex, value) {
-  studentAnswers[qIndex] = value;
 
-  firebase.database().ref(
-    `attempts/class_${currentStudent.class}/${currentTest}/${currentStudent.roll}`
-  ).update({
-    name: currentStudent.name,
-    roll: currentStudent.roll,
-    class: currentStudent.class,
-    answers: studentAnswers,
-    inProgress: true,
-    submitted: false,
-    lastUpdated: Date.now()
-  });
+  currentAnswers[qIndex] = value;
+
+  firebase.database()
+    .ref(`attempts/${currentStudent.class}/${currentStudent.test}/${currentStudent.roll}`)
+    .update({
+      name: currentStudent.name,
+      answers: currentAnswers,
+      lastUpdated: Date.now(),
+      submitted: false
+    });
 }
+
 
 /* 🔄 SESSION CHECK */
 auth.onAuthStateChanged(user => {
@@ -473,6 +508,7 @@ document.getElementById("testName").disabled = false;
 
 </body>
 </html>
+
 
 
 
