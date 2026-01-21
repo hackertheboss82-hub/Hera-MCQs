@@ -95,6 +95,18 @@ Water formula? | H2O | CO2 | NaCl | O2 | 0
 <p id="saveMsg"></p>
 
   <p><b>Next:</b> Test creation UI will appear here</p>
+<hr>
+
+<h3>Manage Tests</h3>
+
+<select id="manageClass" onchange="loadTestsForTeacher()">
+  <option value="">Select Class</option>
+  <option value="10">Class 10</option>
+  <option value="9">Class 9</option>
+  <option value="8">Class 8</option>
+</select>
+
+<div id="testList" style="margin-top:10px;"></div>
 
   <button onclick="logout()">Logout</button>
 </div>
@@ -107,6 +119,56 @@ firebase.initializeApp({
   projectId: "hera-mcqs-55022",
   databaseURL: "https://hera-mcqs-55022-default-rtdb.firebaseio.com"
 });
+/* 📚 LOAD TESTS FOR TEACHER */
+function loadTestsForTeacher() {
+  const cls = document.getElementById("manageClass").value;
+  const list = document.getElementById("testList");
+
+  list.innerHTML = "";
+
+  if (!cls) return;
+
+  firebase.database()
+    .ref(`tests/class_${cls}`)
+    .once("value")
+    .then(snapshot => {
+      if (!snapshot.exists()) {
+        list.innerHTML = "<p>No tests found</p>";
+        return;
+      }
+
+      Object.keys(snapshot.val()).forEach(testName => {
+        const div = document.createElement("div");
+        div.style.border = "1px solid #ccc";
+        div.style.padding = "8px";
+        div.style.marginBottom = "6px";
+
+        div.innerHTML = `
+          <b>${testName}</b><br>
+          <button onclick="deleteTest('${cls}','${testName}')">
+            Delete
+          </button>
+        `;
+
+        list.appendChild(div);
+      });
+    });
+}
+/* ❌ DELETE TEST */
+function deleteTest(cls, testName) {
+  if (!confirm("Delete this test permanently?")) return;
+
+  firebase.database()
+    .ref(`tests/class_${cls}/${testName}`)
+    .remove()
+    .then(() => {
+      alert("Test deleted");
+      loadTestsForTeacher();
+    })
+    .catch(err => {
+      alert(err.message);
+    });
+}
 
 const auth = firebase.auth();
 
@@ -210,4 +272,5 @@ function saveTest() {
 
 </body>
 </html>
+
 
