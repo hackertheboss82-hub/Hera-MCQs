@@ -116,7 +116,12 @@ Water formula? | H2O | CO2 | NaCl | O2 | 0
 
   <input id="sName" placeholder="Student Name">
   <input id="sRoll" placeholder="Roll Number">
-  <input id="sClass" placeholder="Class">
+  <select id="sClass" onchange="loadStudentTests()">
+  <option value="">Select Class</option>
+  <option value="8">Class 8</option>
+  <option value="9">Class 9</option>
+  <option value="10">Class 10</option>
+</select>
 
   <select id="studentTestSelect">
     <option value="">Select Test</option>
@@ -230,61 +235,29 @@ function deleteTest(cls, testName) {
 }
 
 const auth = firebase.auth();
-
-/* 🔐 TEACHER LOGIN */
-function teacherLogin() {
-  const email = document.getElementById("tEmail").value.trim();
-  const pass  = document.getElementById("tPassword").value.trim();
-  const msg   = document.getElementById("loginMsg");
-
-  msg.innerText = "";
-
-  if (!email || !pass) {
-    msg.innerText = "Enter email and password";
-    return;
-  }
-
-  auth.signInWithEmailAndPassword(email, pass)
-    .then(() => {
-      loginBox.style.display = "none";
-      teacherPanel.style.display = "block";
-    })
-    .catch(err => {
-      msg.innerText = err.message;
-    });
-}
-  
 function loadStudentTests() {
-  const cls = document.getElementById("sClass").value.trim();
-  const select = document.getElementById("studentTestSelect");
-  const msg = document.getElementById("studentMsg");
+  const cls = document.getElementById("sClass").value;
+  const testSelect = document.getElementById("studentTestSelect");
 
-  msg.innerText = "";
-  select.innerHTML = `<option value="">Select Test</option>`;
+  testSelect.innerHTML = `<option value="">Select Test</option>`;
 
-  if (!cls) {
-    msg.innerText = "Enter class first";
-    return;
-  }
+  if (!cls) return;
 
   firebase.database()
     .ref(`tests/class_${cls}`)
     .once("value")
     .then(snap => {
-      if (!snap.exists()) {
-        msg.innerText = "No tests available for this class";
-        return;
-      }
+      if (!snap.exists()) return;
 
       Object.keys(snap.val()).forEach(testName => {
         const opt = document.createElement("option");
         opt.value = testName;
         opt.innerText = testName;
-        select.appendChild(opt);
+        testSelect.appendChild(opt);
       });
     });
 }
-  function startTest() {
+function startTest() {
   const name = sName.value.trim();
   const roll = sRoll.value.trim();
   const cls  = sClass.value.trim();
@@ -381,6 +354,31 @@ auth.onAuthStateChanged(user => {
 function logout() {
   auth.signOut();
 }
+/* 🔐 TEACHER LOGIN */
+function teacherLogin() {
+  const email = document.getElementById("tEmail").value.trim();
+  const pass  = document.getElementById("tPassword").value.trim();
+  const msg   = document.getElementById("loginMsg");
+
+  msg.innerText = "";
+
+  if (!email || !pass) {
+    msg.innerText = "Enter email and password";
+    return;
+  }
+
+  auth.signInWithEmailAndPassword(email, pass)
+    .then(() => {
+      loginBox.style.display = "none";
+      teacherPanel.style.display = "block";
+    })
+    .catch(err => {
+      msg.innerText = err.message;
+    });
+}
+  
+
+  
 /* 📝 SAVE TEST */
 function saveTest() {
   const cls = document.getElementById("testClass").value;
@@ -455,6 +453,7 @@ document.getElementById("testName").disabled = false;
 
 </body>
 </html>
+
 
 
 
