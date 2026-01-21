@@ -122,9 +122,13 @@ Water formula? | H2O | CO2 | NaCl | O2 | 0
     <option value="">Select Test</option>
   </select>
 
-  <button onclick="loadStudentTests()">Load Tests</button>
+<button onclick="startTest()">Start / Resume Test</button>
 
   <div id="studentMsg" class="error"></div>
+</div>
+<div id="testArea" style="display:none">
+  <h3 id="testTitle"></h3>
+  <div id="questionBox"></div>
 </div>
 
 <script>
@@ -138,6 +142,10 @@ firebase.initializeApp({
   let editMode = false;
 let editingClass = "";
 let editingTest = "";
+let currentTestId = "";
+let currentQuestions = [];
+let studentKey = "";
+let studentAnswers = {};
 
 /* 📚 LOAD TESTS FOR TEACHER */
 function loadTestsForTeacher() {
@@ -276,7 +284,88 @@ function loadStudentTests() {
       });
     });
 }
+  function startTest() {
+  const name = sName.value.trim();
+  const roll = sRoll.value.trim();
+  const cls  = sClass.value.trim();
+  const test = studentTestSelect.value;
 
+  const msg = document.getElementById("studentMsg");
+
+  if (!name || !roll || !cls || !test) {
+    msg.innerText = "Fill all details and select test";
+    return;
+  }
+
+  studentKey = `${cls}_${test}_${roll}`;
+  currentTestId = `tests/class_${cls}/${test}`;
+
+  document.getElementById("testArea").style.display = "block";
+  document.getElementById("testTitle").innerText = test;
+
+  // 1️⃣ Load questions
+  firebase.database()
+    .ref(currentTestId + "/questions")
+    .once("value")
+    .then(qSnap => {
+      currentQuestions = qSnap.val();
+      loadSavedAttempt();
+    });
+}
+function loadSavedAttempt() {
+  firebase.database()
+    .ref("attempts/" + studentKey)
+    .once("value")
+    .then(snap => {
+      if (snap.exists()) {
+        studentAnswers = snap.val().answers || {};
+      } else {
+        studentAnswers = {};
+      }
+      renderQuestions();
+    });
+}
+
+function renderQuestions() {
+  const box = document.getElementById("questionBox");
+  box.innerHTML = "";
+
+  currentQuestions.forEach((q, index) => {
+    const div = document.createElement("div");
+    div.className = "question";
+
+    let html = `<b>${index + 1}. ${q.q}</b><br>`;
+
+    q.options.forEach((opt, i) => {
+      const checked = studentAnswers[index] == i ? "checked" : "";
+      html += `
+        <label>
+          <input type="radio"
+                 name="q${index}"
+                 value="${i}"
+                 ${checked}
+                 onchange="saveAnswer(${index}, ${i})">
+          ${opt}
+        </label><br>`;
+    });
+
+    div.innerHTML = html;
+    box.appendChild(div);
+  });
+}
+
+  function saveAnswer(qIndex, ans) {
+  studentAnswers[qIndex] = ans;
+
+  firebase.database()
+    .ref("attempts/" + studentKey)
+    .set({
+      answers: studentAnswers,
+      lastSaved: Date.now()
+    });
+}
+
+  
 /* 🔄 SESSION CHECK */
 auth.onAuthStateChanged(user => {
   if (user) {
@@ -366,6 +455,7 @@ document.getElementById("testName").disabled = false;
 
 </body>
 </html>
+
 
 
 
