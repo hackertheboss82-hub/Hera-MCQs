@@ -68,6 +68,31 @@
   </p>
 
   <hr>
+<hr>
+
+<h3>Create New Test</h3>
+
+<select id="testClass">
+  <option value="">Select Class</option>
+  <option value="10">Class 10</option>
+  <option value="9">Class 9</option>
+  <option value="8">Class 8</option>
+</select>
+
+<input type="text" id="testName" placeholder="Test Name (e.g. Science Chapter 1)">
+
+<textarea id="bulkQuestions" rows="8" placeholder="
+FORMAT (one question per line):
+
+Question | Option A | Option B | Option C | Option D | CorrectIndex
+
+Example:
+Water formula? | H2O | CO2 | NaCl | O2 | 0
+"></textarea>
+
+<button onclick="saveTest()">Save Test</button>
+
+<p id="saveMsg"></p>
 
   <p><b>Next:</b> Test creation UI will appear here</p>
 
@@ -118,31 +143,6 @@ auth.onAuthStateChanged(user => {
     teacherPanel.style.display = "none";
   }
 });
-<hr>
-
-<h3>Create New Test</h3>
-
-<select id="testClass">
-  <option value="">Select Class</option>
-  <option value="10">Class 10</option>
-  <option value="9">Class 9</option>
-  <option value="8">Class 8</option>
-</select>
-
-<input type="text" id="testName" placeholder="Test Name (e.g. Science Chapter 1)">
-
-<textarea id="bulkQuestions" rows="8" placeholder="
-FORMAT (one question per line):
-
-Question | Option A | Option B | Option C | Option D | CorrectIndex
-
-Example:
-Water formula? | H2O | CO2 | NaCl | O2 | 0
-"></textarea>
-
-<button onclick="saveTest()">Save Test</button>
-
-<p id="saveMsg"></p>
 
 /* 🚪 LOGOUT */
 function logout() {
@@ -210,3 +210,4 @@ function saveTest() {
 
 </body>
 </html>
+
