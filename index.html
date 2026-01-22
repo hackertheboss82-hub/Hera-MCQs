@@ -90,9 +90,13 @@ placeholder="Question | A | B | C | D | CorrectIndex"></textarea>
 </div>
 
 <!-- TEST AREA -->
-<div class="box" id="testArea">
-<h3 id="testTitle"></h3>
-<div id="questionBox"></div>
+<div id="testArea" style="display:none">
+  <h3 id="testTitle"></h3>
+  <div id="questionBox"></div>
+
+  <button onclick="submitTest()" style="margin-top:20px;background:#2e7d32;color:white">
+    Submit Test
+  </button>
 </div>
 
 <script>
@@ -186,6 +190,23 @@ function renderTest(){
   questionBox.innerHTML+=html+"<hr>";
  });
 }
+function submitTest() {
+
+  if (!confirm("Are you sure you want to submit the test?")) return;
+
+  firebase.database()
+    .ref(`attempts/class_${currentStudent.class}/${currentTest}/${currentStudent.roll}`)
+    .update({
+      submitted: true,
+      submittedAt: Date.now()
+    })
+    .then(() => {
+      alert("Test submitted successfully ✅");
+
+      document.getElementById("testArea").style.display = "none";
+      document.getElementById("studentPanel").style.display = "block";
+    });
+}
 
 function saveAns(i,v){
  studentAnswers[i]=v;
@@ -198,3 +219,4 @@ function logout(){ auth.signOut(); }
 </script>
 </body>
 </html>
+
