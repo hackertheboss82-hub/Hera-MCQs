@@ -152,61 +152,123 @@ function loadStudentTests(){
 
 /* START / RESUME */
 function startStudentTest(){
- currentStudent={
-  name:sName.value, roll:sRoll.value, class:sClass.value
- };
- currentTest=studentTestSelect.value;
 
- firebase.database()
- .ref(`tests/class_${currentStudent.class}/${currentTest}/questions`)
- .once("value").then(qs=>{
-  currentQuestions=qs.val();
+  const sName = document.getElementById("sName");
+  const sRoll = document.getElementById("sRoll");
+  const sClass = document.getElementById("sClass");
+  const testSelect = document.getElementById("studentTestSelect");
 
- firebase.database()
- .ref(`attempts/class_${currentStudent.class}/${currentTest}/${currentStudent.roll}`)
- .once("value").then(a=>{
-  studentAnswers = a.exists()?a.val().answers||{}:{};
-  renderTest();
- });
- });
+  if(!sName.value || !sRoll.value || !sClass.value || !testSelect.value){
+    alert("Please fill all fields");
+    return;
+  }
+
+  currentStudent = {
+    name: sName.value,
+    roll: sRoll.value,
+    class: sClass.value
+  };
+
+  currentTest = testSelect.value;
+
+  // ✅ FIXED PATH
+  firebase.database()
+    .ref(`tests/class_${currentStudent.class}/${currentTest}/questions`)
+    .once("value")
+    .then(qSnap => {
+
+      if(!qSnap.exists()){
+        alert("Questions not found");
+        return;
+      }
+
+      // ✅ OBJECT → ARRAY FIX
+      currentQuestions = Object.values(qSnap.val());
+
+      // ✅ LOAD SAVED ATTEMPT (RESUME)
+      firebase.database()
+        .ref(`attempts/class_${currentStudent.class}/${currentTest}/${currentStudent.roll}`)
+        .once("value")
+        .then(aSnap => {
+
+          studentAnswers = aSnap.exists()
+            ? aSnap.val().answers || {}
+            : {};
+
+          renderTest(); // 👈 YOUR function
+        });
+    });
 }
 
 /* RENDER */
 function renderTest(){
- studentPanel.style.display="none";
- testArea.style.display="block";
- testTitle.innerText=currentTest;
- questionBox.innerHTML="";
 
- currentQuestions.forEach((q,i)=>{
-  let html=`<b>${i+1}. ${q.q}</b><br>`;
-  q.options.forEach((o,j)=>{
-   html+=`<label>
-   <input type="radio" name="q${i}"
-   ${studentAnswers[i]==j?"checked":""}
-   onchange="saveAns(${i},${j})">${o}
-   </label><br>`;
+  studentPanel.style.display = "none";
+  testArea.style.display = "block";
+
+  testTitle.innerText = currentTest;
+  questionBox.innerHTML = "";
+
+  currentQuestions.forEach((q, i) => {
+
+    let html = `<b>${i+1}. ${q.q}</b><br>`;
+
+    q.options.forEach((o, j) => {
+      html += `
+        <label>
+          <input type="radio"
+            name="q${i}"
+            ${studentAnswers[i] == j ? "checked" : ""}
+            onchange="saveAns(${i},${j})">
+          ${o}
+        </label><br>`;
+    });
+
+    questionBox.innerHTML += html + "<hr>";
   });
-  questionBox.innerHTML+=html+"<hr>";
- });
 }
+
+  
 function submitTest() {
 
   if (!confirm("Are you sure you want to submit the test?")) return;
+
+  let correct = 0;
+  let wrong = 0;
+  let total = currentQuestions.length;
+
+  currentQuestions.forEach((q, index) => {
+    if (currentAnswers[index] !== undefined) {
+      if (currentAnswers[index] === q.answer) {
+        correct++;
+      } else {
+        wrong++;
+      }
+    }
+  });
 
   firebase.database()
     .ref(`attempts/class_${currentStudent.class}/${currentTest}/${currentStudent.roll}`)
     .update({
       submitted: true,
-      submittedAt: Date.now()
+      submittedAt: Date.now(),
+      result: {
+        total: total,
+        correct: correct,
+        wrong: wrong,
+        marks: correct
+      }
     })
     .then(() => {
-      alert("Test submitted successfully ✅");
+      alert(
+        `Test Submitted ✅\n\nTotal: ${total}\nCorrect: ${correct}\nWrong: ${wrong}`
+      );
 
       document.getElementById("testArea").style.display = "none";
       document.getElementById("studentPanel").style.display = "block";
     });
 }
+
 
 function saveAns(i,v){
  studentAnswers[i]=v;
@@ -219,4 +281,5 @@ function logout(){ auth.signOut(); }
 </script>
 </body>
 </html>
+
 
