@@ -71,6 +71,25 @@ placeholder="Question | A | B | C | D | CorrectIndex"></textarea>
 <div id="testList"></div>
 <button onclick="logout()">Logout</button>
 </div>
+<h3>Student Results</h3>
+
+<select id="resultClassSelect"></select>
+<select id="resultTestSelect"></select>
+
+<button onclick="loadResults()">Load Results</button>
+
+<div id="resultBox"></div>
+function loadResultClasses(){
+  firebase.database().ref("results").once("value", snap=>{
+    resultClassSelect.innerHTML = "";
+    snap.forEach(c=>{
+      let op = document.createElement("option");
+      op.value = c.key.replace("class_","");
+      op.text = c.key.replace("class_","");
+      resultClassSelect.appendChild(op);
+    });
+  });
+}
 
 <!-- STUDENT PANEL -->
 <div class="box" id="studentPanel">
@@ -301,11 +320,52 @@ function saveAns(i,v){
   `attempts/class_${currentStudent.class}/${currentTest}/${currentStudent.roll}`
  ).update({ answers:studentAnswers });
 }
+function loadResults(){
+  const cls = resultClassSelect.value;
+  const test = resultTestSelect.value;
+
+  resultBox.innerHTML = "";
+
+  firebase.database()
+    .ref(`results/class_${cls}/${test}`)
+    .once("value", snap=>{
+      snap.forEach(st=>{
+        const d = st.val();
+
+        resultBox.innerHTML += `
+          <div style="border:1px solid #ccc;padding:8px;margin:5px">
+            <b>${d.student.name}</b> (Roll: ${st.key})<br>
+            Score: ${d.score}/${d.total}<br>
+            <button onclick="allowReattempt('${cls}','${test}','${st.key}')">
+              Allow Re-Attempt
+            </button>
+          </div>
+        `;
+      });
+    });
+}
+function allowReattempt(cls, test, roll){
+
+  if(!confirm("Allow student to re-attempt this test?")) return;
+
+  // ❌ Remove result
+  firebase.database()
+    .ref(`results/class_${cls}/${test}/${roll}`)
+    .remove();
+
+  // ❌ Remove attempt (answers + lock)
+  firebase.database()
+    .ref(`attempts/class_${cls}/${test}/${roll}`)
+    .remove();
+
+  alert("Re-attempt allowed. Student can start test again.");
+}
 
 function logout(){ auth.signOut(); }
 </script>
 </body>
 </html>
+
 
 
 
