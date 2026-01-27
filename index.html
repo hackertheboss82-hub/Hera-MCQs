@@ -25,10 +25,7 @@ button { cursor:pointer; }
 </head>
 
 <body>
-let score = 0;
-let totalQuestions = 0;
-let correctCount = 0;
-let wrongCount = 0;
+
 
 <!-- TEACHER LOGIN -->
 <div class="box" id="loginBox">
@@ -41,6 +38,14 @@ let wrongCount = 0;
 
 <!-- TEACHER PANEL -->
 <div class="box" id="teacherPanel">
+  <h3>Student Results</h3>
+
+<select id="resultClassSelect"></select>
+<select id="resultTestSelect"></select>
+
+<button onclick="loadResults()">Load Results</button>
+
+<div id="resultBox"></div>
 <h3>Create Test</h3>
 
 <select id="testClass">
@@ -71,14 +76,7 @@ placeholder="Question | A | B | C | D | CorrectIndex"></textarea>
 <div id="testList"></div>
 <button onclick="logout()">Logout</button>
 </div>
-<h3>Student Results</h3>
 
-<select id="resultClassSelect"></select>
-<select id="resultTestSelect"></select>
-
-<button onclick="loadResults()">Load Results</button>
-
-<div id="resultBox"></div>
 function loadResultClasses(){
   firebase.database().ref("results").once("value", snap=>{
     resultClassSelect.innerHTML = "";
@@ -93,6 +91,7 @@ function loadResultClasses(){
 
 <!-- STUDENT PANEL -->
 <div class="box" id="studentPanel">
+  
 <h3>Student Test Portal</h3>
 
 <input id="sName" placeholder="Student Name">
@@ -117,7 +116,7 @@ function loadResultClasses(){
   <h3 id="testTitle"></h3>
   <div id="questionBox"></div>
 
-  <button onclick="submitTest()">Submit Test</button>
+
   <button onclick="submitTest()" style="margin-top:20px;background:#2e7d32;color:white">
     Submit Test
   </button>
@@ -132,7 +131,10 @@ firebase.initializeApp({
 
 const auth = firebase.auth();
 let currentStudent={}, currentTest="", currentQuestions=[], studentAnswers={};
-
+let score = 0;
+let totalQuestions = 0;
+let correctCount = 0;
+let wrongCount = 0;
 /* LOGIN */
 function teacherLogin(){
  auth.signInWithEmailAndPassword(
@@ -143,7 +145,23 @@ function teacherLogin(){
 auth.onAuthStateChanged(u=>{
  loginBox.style.display = u ? "none":"block";
  teacherPanel.style.display = u ? "block":"none";
+
+ if(u){
+   loadResultClasses();
+ }
 });
+resultClassSelect.onchange = function(){
+  resultTestSelect.innerHTML = "";
+  firebase.database()
+    .ref(`results/class_${this.value}`)
+    .once("value", snap=>{
+      snap.forEach(t=>{
+        let o=document.createElement("option");
+        o.value=o.text=t.key;
+        resultTestSelect.appendChild(o);
+      });
+    });
+};
 
 /* SAVE TEST */
 function saveTest(){
@@ -195,16 +213,17 @@ function startStudentTest(){
 
   currentTest = testSelect.value;
 
-  // ✅firebase.database()
+ firebase.database()
   .ref(`results/class_${currentStudent.class}/${currentTest}/${currentStudent.roll}`)
   .once("value")
-  .then(rSnap => {
+  .then(rSnap=>{
     if(rSnap.exists()){
-      alert("Test already submitted. Contact teacher to re-attempt.");
+      alert("Test already submitted. Contact teacher.");
       return;
     }
   });
- FIXED PATH
+
+ 
   firebase.database()
     .ref(`tests/class_${currentStudent.class}/${currentTest}/questions`)
     .once("value")
@@ -365,6 +384,7 @@ function logout(){ auth.signOut(); }
 </script>
 </body>
 </html>
+
 
 
 
