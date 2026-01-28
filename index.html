@@ -77,15 +77,31 @@ placeholder="Question | A | B | C | D | CorrectIndex"></textarea>
 <button onclick="logout()">Logout</button>
 </div>
 
-function loadResultClasses(){
-  firebase.database().ref("attempts").once("value", snap=>{
-    resultClassSelect.innerHTML = "";
-    snap.forEach(c=>{
-      let op = document.createElement("option");
-      op.value = c.key.replace("class_","");
-      op.text = c.key.replace("class_","");
-      resultClassSelect.appendChild(op);
+function loadResultClasses() {
+  const resultClassSelect = document.getElementById("resultClassSelect");
+  if (!resultClassSelect) {
+    console.error("resultClassSelect element not found.");
+    return;
+  }
+
+  firebase.database().ref("attempts").once("value", snap => {
+    resultClassSelect.innerHTML = "";  // Clear existing options
+    snap.forEach(c => {
+      if (c.key.startsWith("class_")) {
+        let className = c.key.replace("class_", "");
+        let op = document.createElement("option");
+        op.value = className;
+        op.text = className;
+        resultClassSelect.appendChild(op);
+      }
     });
+    // Optional: Add a default if no options were added
+    if (resultClassSelect.options.length === 0) {
+      resultClassSelect.innerHTML = '<option value="">No classes available</option>';
+    }
+  }, error => {
+    console.error("Error loading result classes:", error);
+    // Optionally notify the user
   });
 }
 
@@ -152,16 +168,18 @@ auth.onAuthStateChanged(u=>{
 });
 resultClassSelect.onchange = function(){
   resultTestSelect.innerHTML = "";
+
   firebase.database()
-    .ref(`results/class_${this.value}`)
-    .once("value", snap=>{
-      snap.forEach(t=>{
-        let o=document.createElement("option");
-        o.value=o.text=t.key;
+    .ref(`tests/class_${this.value}`)
+    .once("value", snap => {
+      snap.forEach(t => {
+        let o = document.createElement("option");
+        o.value = o.text = t.key;
         resultTestSelect.appendChild(o);
       });
     });
 };
+
 
 /* SAVE TEST */
 function saveTest(){
@@ -384,6 +402,7 @@ function logout(){ auth.signOut(); }
 </script>
 </body>
 </html>
+
 
 
 
