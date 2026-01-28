@@ -103,9 +103,9 @@ placeholder="Question | A | B | C | D | CorrectIndex"></textarea>
   <h3 id="testTitle"></h3>
   <div id="questionBox"></div>
 
-  <button onclick="submitTest()" style="margin-top:20px;background:#2e7d32;color:white">
-    Submit Test
-  </button>
+ <button id="submitBtn" onclick="submitTest()" style="margin-top:20px;background:#2e7d32;color:white">
+  Submit Test
+</button>
 </div>
 
 <script>
@@ -176,18 +176,46 @@ resultClassSelect.innerHTML = `<option value="">Select Class</option>`;
 
 /* SAVE TEST */
 function saveTest(){
- const cls=testClass.value, name=testName.value.trim();
- const lines=bulkQuestions.value.trim().split("\n");
- let q=[];
+
+ const cls = testClass.value;
+ const name = testName.value.trim();
+ const raw = bulkQuestions.value.trim();
+
+ if(!cls){
+   alert("Please select class");
+   return;
+ }
+ if(!name){
+   alert("Please enter test name");
+   return;
+ }
+ if(!raw){
+   alert("Please enter questions");
+   return;
+ }
+
+ const lines = raw.split("\n");
+ let q = [];
+
 
  // ✅ FIX: Add validation for questions
- for(let l of lines){
-  if(!l.includes("|")) continue;
-  let p=l.split("|").map(x=>x.trim());
-  if(p.length < 6) continue;
-  if(isNaN(p[5])) continue;
-  q.push({ q:p[0], options:p.slice(1,5), answer:+p[5] });
- }
+for(let l of lines){
+  let p = l.split("|").map(x=>x.trim());
+  if(p.length !== 6) continue;
+  if(isNaN(p[5]) || p[5] < 0 || p[5] > 3) continue;
+
+  q.push({
+    q: p[0],
+    options: p.slice(1,5),
+    answer: Number(p[5])
+  });
+}
+
+if(q.length === 0){
+  alert("No valid questions found");
+  return;
+}
+
 
  firebase.database().ref(`tests/class_${cls}/${name}`).set({questions:q});
  saveMsg.innerText="Saved ✅";
@@ -296,8 +324,14 @@ function renderTest(){
   });
 }
 
-  
+
 function submitTest(){
+document.getElementById("submitBtn").disabled = true;
+
+  if(Object.keys(studentAnswers).length === 0){
+    alert("Please answer at least one question before submitting.");
+    return;
+  }
 
   score = 0;
   correctCount = 0;
@@ -315,6 +349,9 @@ function submitTest(){
       }
     }
   });
+if(!confirm("Are you sure you want to submit the test?")){
+  return;
+}
 
   const resultData = {
     student: currentStudent,
@@ -424,3 +461,4 @@ function logout(){ auth.signOut(); }
 </script>
 </body>
 </html>
+
