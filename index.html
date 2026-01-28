@@ -78,7 +78,7 @@ placeholder="Question | A | B | C | D | CorrectIndex"></textarea>
 </div>
 
 function loadResultClasses(){
-  firebase.database().ref("results").once("value", snap=>{
+  firebase.database().ref("attempts").once("value", snap=>{
     resultClassSelect.innerHTML = "";
     snap.forEach(c=>{
       let op = document.createElement("option");
@@ -384,6 +384,7 @@ function logout(){ auth.signOut(); }
 </script>
 </body>
 </html>
+
 
 
 
