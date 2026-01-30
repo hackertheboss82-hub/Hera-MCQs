@@ -103,9 +103,10 @@ placeholder="Question | A | B | C | D | CorrectIndex"></textarea>
   <h3 id="testTitle"></h3>
   <div id="questionBox"></div>
 
- <button id="submitBtn" onclick="submitTest()" style="margin-top:20px;background:#2e7d32;color:white">
+<button id="submitBtn" onclick="submitTest()" style="margin-top:20px;background:#2e7d32;color:white">
   Submit Test
 </button>
+
 </div>
 
 <script>
@@ -386,12 +387,16 @@ if(!confirm("Are you sure you want to submit the test?")){
 }
 
 
-function saveAns(i,v){
- studentAnswers[i]=v;
- firebase.database().ref(
-  `attempts/class_${currentStudent.class}/${currentTest}/${currentStudent.roll}`
- ).update({ answers:studentAnswers });
+function saveAns(i, v){
+  if(document.getElementById("submitBtn")?.disabled) return;
+
+  studentAnswers[i] = v;
+
+  firebase.database().ref(
+    `attempts/class_${currentStudent.class}/${currentTest}/${currentStudent.roll}`
+  ).update({ answers: studentAnswers });
 }
+
 function loadResults(){
   const cls = resultClassSelect.value;
   const test = resultTestSelect.value;
@@ -461,4 +466,5 @@ function logout(){ auth.signOut(); }
 </script>
 </body>
 </html>
+
 
