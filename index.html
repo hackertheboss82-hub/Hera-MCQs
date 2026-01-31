@@ -157,22 +157,40 @@ resultClassSelect.onchange = function(){
     });
 };
 
-function loadResultClasses() {
-  resultClassSelect.innerHTML = "";
-resultClassSelect.innerHTML = `<option value="">Select Class</option>`;
+function loadResults(){
+  const cls = resultClassSelect.value;
+  const test = resultTestSelect.value;
 
-  firebase.database().ref("tests").once("value", snap => {
-    snap.forEach(c => {
-      if (c.key.startsWith("class_")) {
-        let cls = c.key.replace("class_", "");
-        let op = document.createElement("option");
-        op.value = cls;
-        op.text = cls;
-        resultClassSelect.appendChild(op);
+  if(!cls || !test){
+    alert("Select class and test");
+    return;
+  }
+
+  resultBox.innerHTML = "";
+
+  firebase.database()
+    .ref(`results/class_${cls}/${test}`)
+    .once("value", snap => {
+
+      if(!snap.exists()){
+        resultBox.innerHTML = "<p>No results found.</p>";
+        return;
       }
+
+      snap.forEach(st => {
+        const d = st.val();
+
+        resultBox.innerHTML += `
+          <div style="border:1px solid #ccc;padding:8px;margin:6px">
+            <b>${d.student.name}</b> (Roll: ${st.key})<br>
+            Score: ${d.score}/${d.total}<br>
+            Correct: ${d.correct} | Wrong: ${d.wrong}
+          </div>
+        `;
+      });
     });
-  });
 }
+
 
 
 /* SAVE TEST */
@@ -466,5 +484,6 @@ function logout(){ auth.signOut(); }
 </script>
 </body>
 </html>
+
 
 
