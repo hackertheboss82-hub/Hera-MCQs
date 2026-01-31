@@ -84,7 +84,7 @@ placeholder="Question | A | B | C | D | CorrectIndex"></textarea>
 <input id="sName" placeholder="Student Name">
 <input id="sRoll" placeholder="Roll Number">
 
-<select id="sClass" onchange="StudentTests()">
+<select id="sClass" onchange="loadTestsForClass(this.value)">
 <option value="">Select Class</option>
 <option value="8">Class 8</option>
 <option value="9">Class 9</option>
@@ -127,6 +127,34 @@ let wrongCount = 0;
 window.on = () => {
   studentPanel.style.display = "block";
 };
+function loadTestsForClass(cls){
+  if(!cls) return;
+
+  // Student dropdown
+  studentTestSelect.innerHTML = "<option value=''>Select Test</option>";
+
+  // Result dropdown
+  resultTestSelect.innerHTML = "<option value=''>Select Test</option>";
+
+  firebase.database()
+    .ref(`tests/class_${cls}`)
+    .once("value", snap => {
+      if(!snap.exists()) return;
+
+      snap.forEach(t => {
+
+        // student
+        let sOpt = document.createElement("option");
+        sOpt.value = sOpt.textContent = t.key;
+        studentTestSelect.appendChild(sOpt);
+
+        // results
+        let rOpt = document.createElement("option");
+        rOpt.value = rOpt.textContent = t.key;
+        resultTestSelect.appendChild(rOpt);
+      });
+    });
+}
 
 /* LOGIN */
 function teacherLogin(){
@@ -144,7 +172,8 @@ auth.onAuthStateChanged(u=>{
  }
 });
 resultClassSelect.onchange = function(){
-  resultTestSelect.innerHTML = "<option value=''>Select Test</option>";
+  loadTestsForClass(this.value);
+};
 
   firebase.database()
     .ref("results/class_" + this.value)
@@ -176,49 +205,54 @@ function ResultClasses(){
 
 /* SAVE TEST */
 function saveTest(){
+  const cls = document.getElementById("testClass").value;
+  const testName = document.getElementById("testName").value.trim();
+  const raw = document.getElementById("bulkQuestions").value.trim();
 
- const cls = testClass.value;
- const name = testName.value.trim();
- const raw = bulkQuestions.value.trim();
+  if(!cls || !testName || !raw){
+    alert("Fill all fields");
+    return;
+  }
 
- if(!cls){
-   alert("Please select class");
-   return;
- }
- if(!name){
-   alert("Please enter test name");
-   return;
- }
- if(!raw){
-   alert("Please enter questions");
-   return;
- }
-
- const lines = raw.split("\n");
- let q = [];
-
-
- // ✅ FIX: Add validation for questions
-for(let l of lines){
-  let p = l.split("|").map(x=>x.trim());
-  if(p.length !== 6) continue;
-  if(isNaN(p[5]) || p[5] < 0 || p[5] > 3) continue;
-
-  q.push({
-    q: p[0],
-    options: p.slice(1,5),
-    answer: Number(p[5])
+  const questions = raw.split("\n").map(line=>{
+    const p = line.split("|");
+    return {
+      q: p[0].trim(),
+      options: [p[1], p[2], p[3], p[4]].map(x=>x.trim()),
+      answer: Number(p[5])
+    };
   });
+
+  firebase.database()
+    .ref(`tests/class_${cls}/${testName}`)
+    .set({ questions })
+    .then(()=>{
+      alert("Test saved");
+      bulkQuestions.value = "";
+      testName.value = "";
+      loadTestsForClass(cls);
+    });
 }
 
-if(q.length === 0){
-  alert("No valid questions found");
-  return;
-}
 
+  const questions = raw.split("\n").map(line=>{
+    const p = line.split("|");
+    return {
+      q: p[0],
+      options: [p[1], p[2], p[3], p[4]],
+      correct: Number(p[5])
+    };
+  });
 
- firebase.database().ref(`tests/class_${cls}/${name}`).set({questions:q});
- saveMsg.innerText="Saved ✅";
+  firebase.database()
+    .ref(`tests/class_${cls}/${testName}`)
+    .set({ questions })
+    .then(()=>{
+      alert("Test saved");
+      document.getElementById("testName").value="";
+      document.getElementById("questionBox").value="";
+      loadTestsForClass(cls);
+    });
 }
 
 /* LOAD STUDENT TESTS */
@@ -479,6 +513,7 @@ function logout(){ auth.signOut(); }
 </script>
 </body>
 </html>
+
 
 
 
