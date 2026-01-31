@@ -42,7 +42,7 @@ button { cursor:pointer; }
 <select id="resultClassSelect"></select>
 <select id="resultTestSelect"></select>
 
-<button onclick="loadResults()">Load Results</button>
+<button onclick="Results()"> Results</button>
 
 <div id="resultBox"></div>
 <h3>Create Test</h3>
@@ -65,7 +65,7 @@ placeholder="Question | A | B | C | D | CorrectIndex"></textarea>
 <hr>
 
 <h3>Manage Tests</h3>
-<select id="manageClass" onchange="loadTestsForTeacher()">
+<select id="manageClass" onchange="TestsForTeacher()">
 <option value="">Select Class</option>
 <option value="8">Class 8</option>
 <option value="9">Class 9</option>
@@ -84,7 +84,7 @@ placeholder="Question | A | B | C | D | CorrectIndex"></textarea>
 <input id="sName" placeholder="Student Name">
 <input id="sRoll" placeholder="Roll Number">
 
-<select id="sClass" onchange="loadStudentTests()">
+<select id="sClass" onchange="StudentTests()">
 <option value="">Select Class</option>
 <option value="8">Class 8</option>
 <option value="9">Class 9</option>
@@ -124,7 +124,7 @@ let correctCount = 0;
 let wrongCount = 0;
 
 // ✅ FIX: Show student panel by default
-window.onload = () => {
+window.on = () => {
   studentPanel.style.display = "block";
 };
 
@@ -140,7 +140,7 @@ auth.onAuthStateChanged(u=>{
  teacherPanel.style.display = u ? "block":"none";
 
  if(u){
-   loadResultClasses();
+   ResultClasses();
  }
 });
 resultClassSelect.onchange = function(){
@@ -159,8 +159,11 @@ resultClassSelect.onchange = function(){
 };
 
 function loadResultClasses(){
-  firebase.database().ref("results").once("value", snap => {
+  firebase.database().ref("tests").once("value", snap => {
+
     resultClassSelect.innerHTML = "<option value=''>Select Class</option>";
+
+    if(!snap.exists()) return;
 
     snap.forEach(cls => {
       let opt = document.createElement("option");
@@ -170,9 +173,6 @@ function loadResultClasses(){
     });
   });
 }
-
-
-
 
 /* SAVE TEST */
 function saveTest(){
@@ -465,6 +465,7 @@ function logout(){ auth.signOut(); }
 </script>
 </body>
 </html>
+
 
 
 
