@@ -158,7 +158,7 @@ resultClassSelect.onchange = function(){
     });
 };
 
-function loadResultClasses(){
+function ResultClasses(){
   firebase.database().ref("tests").once("value", snap => {
 
     resultClassSelect.innerHTML = "<option value=''>Select Class</option>";
@@ -433,6 +433,7 @@ function loadResults(){
     });
 }
 
+
 function allowReattempt(cls, test, roll){
 
   if(!confirm("Allow student to re-attempt this test?")) return;
@@ -478,6 +479,7 @@ function logout(){ auth.signOut(); }
 </script>
 </body>
 </html>
+
 
 
 
