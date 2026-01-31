@@ -144,52 +144,33 @@ auth.onAuthStateChanged(u=>{
  }
 });
 resultClassSelect.onchange = function(){
-  resultTestSelect.innerHTML = "";
+  resultTestSelect.innerHTML = "<option value=''>Select Test</option>";
 
   firebase.database()
-    .ref(`tests/class_${this.value}`)
+    .ref("results/class_" + this.value)
     .once("value", snap => {
-      snap.forEach(t => {
+      snap.forEach(test => {
         let o = document.createElement("option");
-        o.value = o.text = t.key;
+        o.value = test.key;
+        o.textContent = test.key;
         resultTestSelect.appendChild(o);
       });
     });
 };
 
-function loadResults(){
-  const cls = resultClassSelect.value;
-  const test = resultTestSelect.value;
+function loadResultClasses(){
+  firebase.database().ref("results").once("value", snap => {
+    resultClassSelect.innerHTML = "<option value=''>Select Class</option>";
 
-  if(!cls || !test){
-    alert("Select class and test");
-    return;
-  }
-
-  resultBox.innerHTML = "";
-
-  firebase.database()
-    .ref(`results/class_${cls}/${test}`)
-    .once("value", snap => {
-
-      if(!snap.exists()){
-        resultBox.innerHTML = "<p>No results found.</p>";
-        return;
-      }
-
-      snap.forEach(st => {
-        const d = st.val();
-
-        resultBox.innerHTML += `
-          <div style="border:1px solid #ccc;padding:8px;margin:6px">
-            <b>${d.student.name}</b> (Roll: ${st.key})<br>
-            Score: ${d.score}/${d.total}<br>
-            Correct: ${d.correct} | Wrong: ${d.wrong}
-          </div>
-        `;
-      });
+    snap.forEach(cls => {
+      let opt = document.createElement("option");
+      opt.value = cls.key.replace("class_","");
+      opt.textContent = cls.key.replace("class_","");
+      resultClassSelect.appendChild(opt);
     });
+  });
 }
+
 
 
 
@@ -484,6 +465,7 @@ function logout(){ auth.signOut(); }
 </script>
 </body>
 </html>
+
 
 
 
