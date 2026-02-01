@@ -40,7 +40,7 @@ button { cursor:pointer; }
 
 <select id="resultClassSelect"></select>
 <select id="resultTestSelect"></select>
-<button onclick="loadResults()">Results</button>
+<button onclick="Results()">Results</button>
 <div id="resultBox"></div>
 
 <hr>
@@ -62,7 +62,7 @@ placeholder="Question | A | B | C | D | CorrectIndex"></textarea>
 <hr>
 
 <h3>Manage Tests</h3>
-<select id="manageClass" onchange="loadTestsForTeacher()">
+<select id="manageClass" onchange="TestsForTeacher()">
 <option value="">Select Class</option>
 <option value="8">Class 8</option>
 <option value="9">Class 9</option>
@@ -79,7 +79,7 @@ placeholder="Question | A | B | C | D | CorrectIndex"></textarea>
 <input id="sName" placeholder="Student Name">
 <input id="sRoll" placeholder="Roll Number">
 
-<select id="sClass" onchange="loadStudentTests()">
+<select id="sClass" onchange="StudentTests()">
 <option value="">Select Class</option>
 <option value="8">Class 8</option>
 <option value="9">Class 9</option>
@@ -110,7 +110,7 @@ firebase.initializeApp({
 const auth = firebase.auth();
 let currentStudent={}, currentTest="", currentQuestions=[], studentAnswers={};
 
-window.onload = () => {
+window.on = () => {
   studentPanel.style.display = "block";
 };
 
@@ -125,24 +125,27 @@ function teacherLogin(){
 auth.onAuthStateChanged(u=>{
   loginBox.style.display = u ? "none" : "block";
   teacherPanel.style.display = u ? "block" : "none";
-  if(u) loadResultClasses();
+  if(u) ResultClasses();
 });
 
-function loadResultClasses(){
-  resultClassSelect.innerHTML = "<option value=''>Select Class</option>";
-  firebase.database().ref("tests").once("value", snap=>{
-    snap.forEach(c=>{
-      let o=document.createElement("option");
-      o.value=c.key.replace("class_","");
-      o.text=o.value;
-      resultClassSelect.appendChild(o);
+function ResultClasses(){
+  firebase.database().ref("results").once("value", snap => {
+
+    resultClassSelect.innerHTML =
+      "<option value=''>Select Class</option>";
+
+    if(!snap.exists()) return;
+
+    snap.forEach(cls => {
+      let opt = document.createElement("option");
+      opt.value = cls.key.replace("class_","");
+      opt.textContent = cls.key.replace("class_","");
+      resultClassSelect.appendChild(opt);
     });
   });
 }
 
-resultClassSelect.onchange = () => loadTestsForClass(resultClassSelect.value);
-
-function loadTestsForClass(cls){
+function TestsForClass(cls){
   resultTestSelect.innerHTML="<option value=''>Select Test</option>";
   studentTestSelect.innerHTML="<option value=''>Select Test</option>";
 
@@ -179,6 +182,50 @@ function loadStudentTests(){
 
 /* START TEST */
 function startStudentTest(){
+  const cls = studentClassSelect.value;
+const test = studentTestSelect.value;
+const roll = studentRollInput.value;
+
+if (!cls || !test || !roll) {
+  alert("Please fill all details");
+  return;
+}
+firebase.database()
+  .ref(`results/class_${cls}/${test}/${roll}`)
+  .once("value")
+  .then(snapshot => {
+
+    if (snapshot.exists()) {
+      alert("You already submitted this test.\nContact teacher for reattempt.");
+      return; // ⛔ STOP here
+    }
+
+    // ✅ continue ONLY if no previous attempt
+    loadStudentQuestions(cls, test);
+  });
+
+  const cls = studentClass.value;
+const test = studentTest.value;
+const roll = studentRoll.value;
+
+if (!cls || !test || !roll) {
+  alert("Fill all details");
+  return;
+}
+  firebase.database()
+  .ref(`results/class_${cls}/${test}/${roll}`)
+  .once("value")
+  .then(rSnap => {
+
+    if (rSnap.exists()) {
+      alert("You already submitted this test.\nContact teacher for reattempt.");
+      return;   // ⛔ STOP test loading
+    }
+
+    // ✅ ALLOW TEST
+    loadQuestionsForStudent(cls, test);
+  });
+
   currentStudent={name:sName.value,roll:sRoll.value,class:sClass.value};
   currentTest=studentTestSelect.value;
 
@@ -218,17 +265,51 @@ function loadResults(){
     });
 }
 
-function loadTestsForTeacher(){
-  testList.innerHTML="";
-  firebase.database().ref(`tests/class_${manageClass.value}`).once("value", snap=>{
-    snap.forEach(t=>{
-      testList.innerHTML+=`<div>${t.key}</div>`;
+function loadTestsForTeacher() {
+  const cls = manageClass.value;
+  const testList = document.getElementById("testList");
+  testList.innerHTML = "";
+  if (!cls) return;
+
+  firebase.database()
+    .ref(`tests/class_${cls}`)
+    .once("value", snap => {
+
+      if (!snap.exists()) {
+        testList.innerHTML = "<p>No tests found.</p>";
+        return;
+      }
+
+      snap.forEach(t => {
+        testList.innerHTML += `
+          <div style="border:1px solid #ccc;padding:6px;margin:5px">
+            <b>${t.key}</b><br>
+            <button onclick="editTest('${cls}','${t.key}')">Edit</button>
+            <button onclick="deleteTest('${cls}','${t.key}')">Delete</button>
+          </div>
+        `;
+      });
     });
-  });
 }
+  function editTest(cls, testName){
+  firebase.database()
+    .ref(`tests/class_${cls}/${testName}/questions`)
+    .once("value", snap=>{
+      if(!snap.exists()) return;
+
+      testClass.value = cls;
+      testNameInput.value = testName;
+
+      bulkQuestions.value = Object.values(snap.val())
+        .map(q => `${q.q} | ${q.options.join(" | ")} | ${q.answer}`)
+        .join("\n");
+    });
+}
+
 
 function logout(){ auth.signOut(); }
 </script>
 
 </body>
 </html>
+
