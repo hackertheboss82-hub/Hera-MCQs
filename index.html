@@ -42,8 +42,7 @@ button { cursor:pointer; }
 <select id="resultClassSelect"></select>
 <select id="resultTestSelect"></select>
 
-<button onclick="Results()"> Results</button>
-
+<button onclick="loadResults()">Results</button>
 <div id="resultBox"></div>
 <h3>Create Test</h3>
 
@@ -65,7 +64,7 @@ placeholder="Question | A | B | C | D | CorrectIndex"></textarea>
 <hr>
 
 <h3>Manage Tests</h3>
-<select id="manageClass" onchange="TestsForTeacher()">
+<select id="manageClass" onchange="loadTestsForTeacher()">
 <option value="">Select Class</option>
 <option value="8">Class 8</option>
 <option value="9">Class 9</option>
@@ -84,7 +83,7 @@ placeholder="Question | A | B | C | D | CorrectIndex"></textarea>
 <input id="sName" placeholder="Student Name">
 <input id="sRoll" placeholder="Roll Number">
 
-<select id="sClass" onchange="loadTestsForClass(this.value)">
+<select id="sClass" onchange="loadStudentTests()">
 <option value="">Select Class</option>
 <option value="8">Class 8</option>
 <option value="9">Class 9</option>
@@ -124,9 +123,10 @@ let correctCount = 0;
 let wrongCount = 0;
 
 // ✅ FIX: Show student panel by default
-window.on = () => {
-  studentPanel.style.display = "block";
+window.onload = () => {
+  document.getElementById("studentPanel").style.display = "block";
 };
+
 function loadTestsForClass(cls){
   if(!cls) return;
 
@@ -513,6 +513,7 @@ function logout(){ auth.signOut(); }
 </script>
 </body>
 </html>
+
 
 
 
