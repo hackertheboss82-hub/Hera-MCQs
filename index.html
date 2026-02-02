@@ -55,6 +55,7 @@ button { cursor:pointer; }
 
 <input id="testName" placeholder="Test Name">
 <input id="testDuration" type="number" placeholder="Duration (minutes)">
+<input id="questionLimit" type="number" placeholder="Questions to show (e.g. 30)">
 <textarea id="bulkQuestions" rows="6"
 placeholder="Question | A | B | C | D | CorrectIndex"></textarea>
 
@@ -169,8 +170,9 @@ function saveTest(){
   const name = testName.value.trim();
   const raw = bulkQuestions.value.trim();
   const duration = Number(testDuration.value);
+  const limit = Number(questionLimit.value);
 
-  if(!cls || !name || !raw || !duration){
+if(!cls || !name || !raw || !duration || !limit){
     alert("Fill all fields including duration");
     return;
   }
@@ -186,16 +188,24 @@ function saveTest(){
 
   firebase.database()
     .ref(`tests/class_${cls}/${name}`)
-    .set({
-      duration: duration,   // ✅ SAVE TIME
-      questions: questions
-    })
+   .set({
+  duration: duration,
+  limit: limit,       // ✅ question limit saved
+  questions: questions
+})
     .then(()=>{
       alert("Test Saved with duration");
       testName.value="";
       bulkQuestions.value="";
       testDuration.value="";
     });
+}
+function shuffleArray(arr){
+  for(let i = arr.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
 }
 
 /* STUDENT TESTS */
@@ -237,12 +247,19 @@ firebase.database()
 
     const data = snap.val();
 
-    currentQuestions = Object.values(data.questions);
-    studentAnswers = {};
+let allQuestions = Object.values(data.questions);
 
-    startTimer(data.duration); // ⏱ USE TEACHER TIME
-    renderTest();
-  });
+// 🔀 Shuffle
+shuffleArray(allQuestions);
+
+// ✂️ Apply teacher limit
+const limit = data.limit || allQuestions.length;
+currentQuestions = allQuestions.slice(0, limit);
+
+studentAnswers = {};
+startTimer(data.duration);
+renderTest();
+
 
 function renderTest(){
 testTitle.innerText = `${currentTest} (${currentQuestions.length} Questions)`;
@@ -400,6 +417,7 @@ function logout(){ auth.signOut(); }
 
 </body>
 </html>
+
 
 
 
