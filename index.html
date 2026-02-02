@@ -114,6 +114,11 @@ const auth = firebase.auth();
 let currentStudent={}, currentTest="", currentQuestions=[], studentAnswers={};
 let timerInterval = null;
 let remainingTime = 0; // seconds
+window.onbeforeunload = function () {
+  if (testArea.style.display === "block") {
+    return "Test is running. Leaving will submit the test.";
+  }
+};
 
 window.onload = () => {
   studentPanel.style.display = "block";
@@ -172,7 +177,7 @@ function saveTest(){
   const duration = Number(testDuration.value);
   const limit = Number(questionLimit.value);
 
-if(!cls || !name || !raw || !duration || !limit){
+  if(!cls || !name || !raw || !duration || !limit){
     alert("Fill all fields including duration");
     return;
   }
@@ -188,18 +193,20 @@ if(!cls || !name || !raw || !duration || !limit){
 
   firebase.database()
     .ref(`tests/class_${cls}/${name}`)
-   .set({
-  duration: duration,
-  limit: limit,       // ✅ question limit saved
-  questions: questions
-})
+    .set({
+      duration: duration,
+      limit: limit,
+      questions: questions
+    })
     .then(()=>{
       alert("Test Saved with duration");
       testName.value="";
       bulkQuestions.value="";
       testDuration.value="";
+      questionLimit.value="";
     });
 }
+
 function shuffleArray(arr){
   for(let i = arr.length - 1; i > 0; i--){
     const j = Math.floor(Math.random() * (i + 1));
@@ -236,33 +243,35 @@ function startStudentTest(){
       currentStudent = { name, roll, class: cls };
       currentTest = test;
 
-firebase.database()
-  .ref(`tests/class_${cls}/${test}`)
-  .once("value", snap => {
+      firebase.database()
+        .ref(`tests/class_${cls}/${test}`)
+        .once("value", snap => {
 
-    if (!snap.exists()) {
-      alert("Test not found");
-      return;
-    }
+          if (!snap.exists()) {
+            alert("Test not found");
+            return;
+          }
 
-    const data = snap.val();
+          const data = snap.val();
 
-let allQuestions = Object.values(data.questions);
+         let allQuestions = Object.values(data.questions || {});
 
-// 🔀 Shuffle
-shuffleArray(allQuestions);
+          // 🔀 Shuffle
+          shuffleArray(allQuestions);
 
-// ✂️ Apply teacher limit
-const limit = data.limit || allQuestions.length;
-currentQuestions = allQuestions.slice(0, limit);
+          // ✂️ Apply teacher limit
+          const limit = data.limit || allQuestions.length;
+          currentQuestions = allQuestions.slice(0, limit);
 
-studentAnswers = {};
-startTimer(data.duration);
-renderTest();
-
+          studentAnswers = {};
+          startTimer(data.duration);
+          renderTest();
+        });
+    });
+}
 
 function renderTest(){
-testTitle.innerText = `${currentTest} (${currentQuestions.length} Questions)`;
+  testTitle.innerText = `${currentTest} (${currentQuestions.length} Questions)`;
   studentPanel.style.display="none";
   testArea.style.display="block";
   questionBox.innerHTML="";
@@ -273,6 +282,7 @@ testTitle.innerText = `${currentTest} (${currentQuestions.length} Questions)`;
     </label><br>`).join("")+"<hr>";
   });
 }
+
 function startTimer(minutes){
   clearInterval(timerInterval);
 
@@ -299,7 +309,7 @@ function updateTimerDisplay(){
 }
 
 function submitTest(){
-clearInterval(timerInterval);
+  clearInterval(timerInterval);
   let score = 0;
 
   currentQuestions.forEach((q, i) => {
@@ -351,6 +361,7 @@ function Results(){
       });
     });
 }
+
 function allowReattempt(cls, test, roll){
   if(!confirm("Allow this student to reattempt the test?")) return;
 
@@ -362,7 +373,6 @@ function allowReattempt(cls, test, roll){
       Results(); // refresh list
     });
 }
-
 
 function TestsForTeacher() {
   const cls = manageClass.value;
@@ -393,14 +403,16 @@ function TestsForTeacher() {
 
 function editTest(cls, testName){
   firebase.database()
-    .ref(`tests/class_${cls}/${testName}/questions`)
+    .ref(`tests/class_${cls}/${testName}`)
     .once("value", snap=>{
       if(!snap.exists()) return;
 
+      const data = snap.val();
       testClass.value = cls;
       testName.value = testName;
-
-      bulkQuestions.value = Object.values(snap.val())
+      testDuration.value = data.duration || "";
+      questionLimit.value = data.limit || "";
+      bulkQuestions.value = Object.values(data.questions)
         .map(q => `${q.q} | ${q.options.join(" | ")} | ${q.answer}`)
         .join("\n");
     });
@@ -417,7 +429,3 @@ function logout(){ auth.signOut(); }
 
 </body>
 </html>
-
-
-
-
