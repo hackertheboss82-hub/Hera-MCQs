@@ -96,6 +96,7 @@ placeholder="Question | A | B | C | D | CorrectIndex"></textarea>
 <!-- TEST AREA -->
 <div id="testArea">
 <h3 id="testTitle"></h3>
+<h4 id="timerBox" style="color:red"></h4>
 <div id="questionBox"></div>
 <button id="submitBtn" onclick="submitTest()">Submit</button>
 </div>
@@ -109,6 +110,8 @@ firebase.initializeApp({
 
 const auth = firebase.auth();
 let currentStudent={}, currentTest="", currentQuestions=[], studentAnswers={};
+let timerInterval = null;
+let remainingTime = 0; // seconds
 
 window.onload = () => {
   studentPanel.style.display = "block";
@@ -214,6 +217,7 @@ function startStudentTest(){
 
           currentQuestions = Object.values(qSnap.val());
           studentAnswers = {};
+startTimer(10); // 10 minutes
 
           renderTest();
         });
@@ -231,9 +235,33 @@ function renderTest(){
     </label><br>`).join("")+"<hr>";
   });
 }
+function startTimer(minutes){
+  clearInterval(timerInterval);
+
+  remainingTime = minutes * 60;
+  updateTimerDisplay();
+
+  timerInterval = setInterval(() => {
+    remainingTime--;
+
+    updateTimerDisplay();
+
+    if (remainingTime <= 0) {
+      clearInterval(timerInterval);
+      alert("Time is up! Test will be submitted automatically.");
+      submitTest();
+    }
+  }, 1000);
+}
+
+function updateTimerDisplay(){
+  const min = Math.floor(remainingTime / 60);
+  const sec = remainingTime % 60;
+  timerBox.innerText = `Time Left: ${min}:${sec.toString().padStart(2,'0')}`;
+}
 
 function submitTest(){
-
+clearInterval(timerInterval);
   let score = 0;
 
   currentQuestions.forEach((q, i) => {
@@ -351,4 +379,5 @@ function logout(){ auth.signOut(); }
 
 </body>
 </html>
+
 
