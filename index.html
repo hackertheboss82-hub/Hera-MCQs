@@ -62,7 +62,7 @@ placeholder="Question | A | B | C | D | CorrectIndex"></textarea>
 <hr>
 
 <h3>Manage Tests</h3>
-<select id="manageClass" onchange="loadTestsForTeacher()">
+<select id="manageClass" onchange="TestsForTeacher()">
 <option value="">Select Class</option>
 <option value="8">Class 8</option>
 <option value="9">Class 9</option>
@@ -110,7 +110,7 @@ firebase.initializeApp({
 const auth = firebase.auth();
 let currentStudent={}, currentTest="", currentQuestions=[], studentAnswers={};
 
-window.on = () => {
+window.onload = () => {
   studentPanel.style.display = "block";
 };
 
@@ -254,8 +254,22 @@ function submitTest(){
     });
 }
 
+function Results(){
+  const cls = resultClassSelect.value;
+  const test = resultTestSelect.value;
+  if(!cls || !test) return alert("Select class and test");
 
-function loadTestsForTeacher() {
+  firebase.database().ref(`results/class_${cls}/${test}`).once("value", snap=>{
+    resultBox.innerHTML = "";
+    if(!snap.exists()) return resultBox.innerHTML = "No results";
+    snap.forEach(r=>{
+      const data = r.val();
+      resultBox.innerHTML += `<p>${r.key}: ${data.name} - ${data.score}/${data.total}</p>`;
+    });
+  });
+}
+
+function TestsForTeacher() {
   const cls = manageClass.value;
   const testList = document.getElementById("testList");
   testList.innerHTML = "";
@@ -281,7 +295,8 @@ function loadTestsForTeacher() {
       });
     });
 }
-  function editTest(cls, testName){
+
+function editTest(cls, testName){
   firebase.database()
     .ref(`tests/class_${cls}/${testName}/questions`)
     .once("value", snap=>{
@@ -296,6 +311,11 @@ function loadTestsForTeacher() {
     });
 }
 
+function deleteTest(cls, testName){
+  if(confirm("Delete this test?")){
+    firebase.database().ref(`tests/class_${cls}/${testName}`).remove().then(()=>alert("Deleted"));
+  }
+}
 
 function logout(){ auth.signOut(); }
 </script>
