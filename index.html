@@ -450,7 +450,10 @@ function teacherSignup(){
   }
   if (pass !== confirmPass) {
     signupMsg.innerText = "";
-      // Add loading
+    loginMsg.innerText = "Passwords do not match.";
+    return;
+  }
+  // Add loading
   const btn = document.querySelector('.register-box button');
   btn.innerHTML = '<div class="loading"></div> Signing up...';
   btn.disabled = true;
@@ -566,9 +569,7 @@ function autoSaveAnswers(){
 function shuffleArray(arr){
   for(let i = arr.length - 1; i > 0; i--){
     const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-  return arr;
+      return arr;
 }
 
 function startStudentTest(){
