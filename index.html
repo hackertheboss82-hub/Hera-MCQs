@@ -9,13 +9,15 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
 <style>
-body { font-family: Arial; background:#f4f6f8; }
+body { font-family: Arial; background: var(--bg-color); color: var(--text-color); transition: 0.3s; }
 .box {
   width:360px; margin:40px auto; padding:20px;
-  background:#fff; border-radius:8px; box-shadow:0 0 10px #ccc;
+  background: var(--box-bg); border-radius:8px; box-shadow:0 0 10px rgba(0,0,0,0.1);
+  color: var(--text-color);
 }
 input, select, button {
   width:100%; padding:10px; margin-top:10px;
+  background: #f0f0f0; color: var(--text-color); border: 1px solid #ccc;
 }
 button { cursor:pointer; }
 #teacherPanel, #testArea { display:none; }
@@ -448,10 +450,7 @@ function teacherSignup(){
   }
   if (pass !== confirmPass) {
     signupMsg.innerText = "";
-    loginMsg.innerText = "Passwords do not match.";
-    return;
-  }
-  // Add loading
+      // Add loading
   const btn = document.querySelector('.register-box button');
   btn.innerHTML = '<div class="loading"></div> Signing up...';
   btn.disabled = true;
