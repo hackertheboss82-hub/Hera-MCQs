@@ -9,7 +9,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
 <style>
-body { font-family: Arial; background: var(--bg-color); color: var(--text-color); transition: 0.3s; }
+body { font-family: Arial; background: var(--bg-color); color: var(--text-color); transition: 0.3s; margin: 0; padding: 0; }
 .box {
   width:360px; margin:40px auto; padding:20px;
   background: var(--box-bg); border-radius:8px; box-shadow:0 0 10px rgba(0,0,0,0.1);
@@ -145,36 +145,164 @@ button:hover {
   transform: translateX(-100%);
 }
 
-/* Professional Test Area Styling */
+/* Professional Test Area Styling - CAT/CBT Style */
 #testArea {
-  background: var(--box-bg);
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: var(--bg-color);
   color: var(--text-color);
-  padding: 20px;
-  border-radius: 10px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-  max-width: 800px;
-  margin: 20px auto;
 }
 
-#questionBox label {
-  display: block;
+.test-header {
+  background: var(--accent);
+  color: #fff;
+  padding: 10px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: bold;
+}
+
+.test-body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.question-area {
+  flex: 3;
+  padding: 20px;
+  overflow-y: auto;
+  background: var(--box-bg);
+}
+
+.question-display {
+  margin-bottom: 20px;
+}
+
+.options {
+  display: flex;
+  flex-direction: column;
+}
+
+.option {
   margin: 10px 0;
   padding: 10px;
-  background: #f9f9f9;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: 0.3s;
+  display: flex;
+  align-items: center;
+}
+
+.option:hover {
+  background: #f0f0f0;
+}
+
+.option.selected {
+  background: var(--accent);
+  color: #fff;
+}
+
+.option input[type="radio"] {
+  margin-right: 10px;
+}
+
+.question-map {
+  flex: 1;
+  padding: 20px;
+  background: var(--box-bg);
+  border-left: 1px solid #ccc;
+  overflow-y: auto;
+}
+
+.map-title {
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.question-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+}
+
+.q-num {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #ccc;
   border-radius: 5px;
   cursor: pointer;
   transition: 0.3s;
 }
 
-#questionBox label:hover {
-  background: var(--accent);
+.q-num.not-attempted {
+  background: #e0e0e0;
+}
+
+.q-num.attempted {
+  background: #4caf50;
   color: #fff;
 }
 
-#timerBox {
-  font-weight: bold;
-  text-align: center;
-  margin-bottom: 20px;
+.q-num.marked {
+  background: #ff9800;
+  color: #fff;
+}
+
+.q-num.current {
+  border: 2px solid var(--accent);
+}
+
+.legend {
+  margin-top: 20px;
+  font-size: 12px;
+}
+
+.legend div {
+  margin: 5px 0;
+  display: flex;
+  align-items: center;
+}
+
+.legend span {
+  width: 20px;
+  height: 20px;
+  margin-right: 10px;
+  border-radius: 3px;
+}
+
+.test-footer {
+  background: var(--box-bg);
+  padding: 10px 20px;
+  border-top: 1px solid #ccc;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.footer-buttons button {
+  margin: 0 5px;
+  padding: 10px 15px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.footer-buttons button:hover {
+  opacity: 0.8;
+}
+
+.footer-buttons button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
 }
 
 /* Responsive Design */
@@ -189,6 +317,17 @@ button:hover {
   }
   .orange-panel, .panel-text {
     display: none;
+  }
+  .test-body {
+    flex-direction: column;
+  }
+  .question-map {
+    border-left: none;
+    border-top: 1px solid #ccc;
+    max-height: 200px;
+  }
+  .question-grid {
+    grid-template-columns: repeat(10, 1fr);
   }
 }
 
@@ -206,6 +345,77 @@ button:hover {
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+
+/* Tabbed Dashboard Styles */
+#teacherPanel {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.header {
+  background: var(--accent);
+  color: #fff;
+  padding: 15px;
+  text-align: center;
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.dashboard-container {
+  display: flex;
+  flex: 1;
+}
+
+.sidebar {
+  width: 250px;
+  background: var(--box-bg);
+  border-right: 1px solid #ccc;
+  padding: 20px 0;
+}
+
+.sidebar ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.sidebar li {
+  padding: 15px 20px;
+  cursor: pointer;
+  border-bottom: 1px solid #eee;
+  transition: 0.3s;
+}
+
+.sidebar li:hover, .sidebar li.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+.main-content {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.tab-content {
+  display: none;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+@media (max-width: 768px) {
+  .dashboard-container {
+    flex-direction: column;
+  }
+  .sidebar {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid #ccc;
+  }
 }
 </style>
 </head>
@@ -258,80 +468,108 @@ button:hover {
 </div>
 
 <!-- TEACHER PANEL -->
-<div class="box" id="teacherPanel">
-<h3>Student Results</h3>
+<div id="teacherPanel">
+  <div class="header">Hera MCQ System</div>
+  <div class="dashboard-container">
+    <div class="sidebar">
+      <ul>
+        <li id="tab-dashboard" onclick="showTab('dashboard')" class="active">Dashboard</li>
+        <li id="tab-createTest" onclick="showTab('createTest')">Create Test</li>
+        <li id="tab-manageTests" onclick="showTab('manageTests')">Manage Tests</li>
+        <li id="tab-results" onclick="showTab('results')">Results</li>
+        <li id="tab-approvals" onclick="showTab('approvals')">Approvals</li>
+        <li onclick="logout()">Logout</li>
+      </ul>
+    </div>
+    <div class="main-content">
+      <!-- Dashboard Tab -->
+      <div id="dashboard" class="tab-content active">
+        <h3>Dashboard</h3>
+        <p>Welcome to the Hera MCQ System. Use the sidebar to navigate.</p>
+        <!-- Add summary stats here if needed, e.g., total tests, pending approvals, etc. -->
+        <div id="dashboardStats">
+          <p>Loading stats...</p>
+        </div>
+      </div>
 
-<select id="resultClassSelect" onchange="TestsForClass(this.value)">
-<option value="">Select Class</option>
-<option value="jr_kg">Jr. KG</option>
-<option value="sr_kg">Sr. KG</option>
-<option value="1">Class 1</option>
-<option value="2">Class 2</option>
-<option value="3">Class 3</option>
-<option value="4">Class 4</option>
-<option value="5">Class 5</option>
-<option value="6">Class 6</option>
-<option value="7">Class 7</option>
-<option value="8">Class 8</option>
-<option value="9">Class 9</option>
-<option value="10">Class 10</option>
-</select>
-<select id="resultTestSelect"></select>
-<button onclick="Results()">Results</button>
-<div id="resultBox"></div>
+      <!-- Create Test Tab -->
+      <div id="createTest" class="tab-content">
+        <h3>Create Test</h3>
+        <select id="testClass">
+          <option value="">Select Class</option>
+          <option value="jr_kg">Jr. KG</option>
+          <option value="sr_kg">Sr. KG</option>
+          <option value="1">Class 1</option>
+          <option value="2">Class 2</option>
+          <option value="3">Class 3</option>
+          <option value="4">Class 4</option>
+          <option value="5">Class 5</option>
+          <option value="6">Class 6</option>
+          <option value="7">Class 7</option>
+          <option value="8">Class 8</option>
+          <option value="9">Class 9</option>
+          <option value="10">Class 10</option>
+        </select>
+        <input id="testName" placeholder="Test Name">
+        <input id="testDuration" type="number" placeholder="Duration (minutes)">
+        <input id="questionLimit" type="number" placeholder="Questions to show (e.g. 30)">
+        <textarea id="bulkQuestions" rows="6" placeholder="Question | A | B | C | D | CorrectIndex"></textarea>
+        <button onclick="saveTest()">Save Test</button>
+      </div>
 
-<hr>
+      <!-- Manage Tests Tab -->
+      <div id="manageTests" class="tab-content">
+        <h3>Manage Tests</h3>
+        <select id="manageClass" onchange="TestsForTeacher()">
+          <option value="">Select Class</option>
+          <option value="jr_kg">Jr. KG</option>
+          <option value="sr_kg">Sr. KG</option>
+          <option value="1">Class 1</option>
+          <option value="2">Class 2</option>
+          <option value="3">Class 3</option>
+          <option value="4">Class 4</option>
+          <option value="5">Class 5</option>
+          <option value="6">Class 6</option>
+          <option value="7">Class 7</option>
+          <option value="8">Class 8</option>
+          <option value="9">Class 9</option>
+          <option value="10">Class 10</option>
+        </select>
+        <div id="testList"></div>
+      </div>
 
-<h3>Create Test</h3>
-<select id="testClass">
-<option value="">Select Class</option>
-<option value="jr_kg">Jr. KG</option>
-<option value="sr_kg">Sr. KG</option>
-<option value="1">Class 1</option>
-<option value="2">Class 2</option>
-<option value="3">Class 3</option>
-<option value="4">Class 4</option>
-<option value="5">Class 5</option>
-<option value="6">Class 6</option>
-<option value="7">Class 7</option>
-<option value="8">Class 8</option>
-<option value="9">Class 9</option>
-<option value="10">Class 10</option>
-</select>
+      <!-- Results Tab -->
+      <div id="results" class="tab-content">
+        <h3>Student Results</h3>
+        <select id="resultClassSelect" onchange="TestsForClass(this.value)">
+          <option value="">Select Class</option>
+          <option value="jr_kg">Jr. KG</option>
+          <option value="sr_kg">Sr. KG</option>
+          <option value="1">Class 1</option>
+          <option value="2">Class 2</option>
+          <option value="3">Class 3</option>
+          <option value="4">Class 4</option>
+          <option value="5">Class 5</option>
+          <option value="6">Class 6</option>
+          <option value="7">Class 7</option>
+          <option value="8">Class 8</option>
+          <option value="9">Class 9</option>
+          <option value="10">Class 10</option>
+        </select>
+        <select id="resultTestSelect"></select>
+        <button onclick="Results()">Results</button>
+        <div id="resultBox"></div>
+      </div>
 
-<input id="testName" placeholder="Test Name">
-<input id="testDuration" type="number" placeholder="Duration (minutes)">
-<input id="questionLimit" type="number" placeholder="Questions to show (e.g. 30)">
-<textarea id="bulkQuestions" rows="6"
-placeholder="Question | A | B | C | D | CorrectIndex"></textarea>
+      <!-- Approvals Tab -->
+      <div id="approvals" class="tab-content">
+        <h3>Pending Teacher Signups</h3>
+        <div id="pendingSignupsList"></div>
+      </div>
 
-<button onclick="saveTest()">Save Test</button>
-
-<hr>
-
-<h3>Manage Tests</h3>
-<hr>
-<h3>Pending Teacher Signups</h3>
-<div id="pendingSignupsList"></div>
-<select id="manageClass" onchange="TestsForTeacher()">
-<option value="">Select Class</option>
-<option value="jr_kg">Jr. KG</option>
-<option value="sr_kg">Sr. KG</option>
-<option value="1">Class 1</option>
-<option value="2">Class 2</option>
-<option value="3">Class 3</option>
-<option value="4">Class 4</option>
-<option value="5">Class 5</option>
-<option value="6">Class 6</option>
-<option value="7">Class 7</option>
-<option value="8">Class 8</option>
-<option value="9">Class 9</option>
-<option value="10">Class 10</option>
-</select>
-
-<button id="themeToggle" onclick="toggleTheme()">Switch to Dark Theme</button>
-<div id="testList"></div>
-<button onclick="logout()">Logout</button>
+      <button id="themeToggle" onclick="toggleTheme()">Switch to Dark Theme</button>
+    </div>
+  </div>
 </div>
 
 <!-- STUDENT PANEL -->
@@ -363,12 +601,35 @@ placeholder="Question | A | B | C | D | CorrectIndex"></textarea>
 <button onclick="startStudentTest()">Start Test</button>
 </div>
 
-<!-- TEST AREA -->
+<!-- TEST AREA - CAT/CBT Style -->
 <div id="testArea">
-<h3 id="testTitle"></h3>
-<h4 id="timerBox" style="color:red"></h4>
-<div id="questionBox"></div>
-<button id="submitBtn" onclick="submitTest()">Submit</button>
+  <div class="test-header">
+    <span id="testTitle"></span>
+    <span id="timerBox"></span>
+  </div>
+  <div class="test-body">
+    <div class="question-area">
+      <div id="questionDisplay" class="question-display"></div>
+    </div>
+    <div class="question-map">
+      <div class="map-title">Question Map</div>
+      <div id="questionGrid" class="question-grid"></div>
+      <div class="legend">
+        <div><span style="background: #e0e0e0;"></span> Not Attempted</div>
+        <div><span style="background: #4caf50;"></span> Attempted</div>
+        <div><span style="background: #ff9800;"></span>
+                <div><span style="background: #ff9800;"></span> Marked for Review</div>
+      </div>
+    </div>
+  </div>
+  <div class="test-footer">
+    <div class="footer-buttons">
+      <button id="markReviewBtn" onclick="markForReview()">Mark for Review</button>
+      <button id="prevBtn" onclick="navigateQuestion(-1)" disabled>Prev</button>
+      <button id="nextBtn" onclick="navigateQuestion(1)">Next</button>
+    </div>
+    <button id="submitBtn" onclick="submitTest()">Submit</button>
+  </div>
 </div>
 
 <script>
@@ -379,11 +640,12 @@ firebase.initializeApp({
 });
 
 const auth = firebase.auth();
-let currentStudent={}, currentTest="", currentQuestions=[], studentAnswers={};
+let currentStudent = {}, currentTest = "", currentQuestions = [], studentAnswers = {}, markedForReview = {};
 let timerInterval = null;
 let remainingTime = 0; // seconds
 let autoSaveInterval = null;
 let currentTheme = 'light';
+let currentQuestionIndex = 0;
 
 // Theme Toggle
 function toggleTheme() {
@@ -401,15 +663,15 @@ function toggleTheme() {
 }
 
 // Show Register/Login
-function showRegister(){
+function showRegister() {
   document.getElementById("container").classList.add("active");
 }
 
-function showLogin(){
+function showLogin() {
   document.getElementById("container").classList.remove("active");
 }
 
-function disableUnloadWarning(){
+function disableUnloadWarning() {
   window.onbeforeunload = null;
 }
 
@@ -423,8 +685,23 @@ window.onload = () => {
   studentPanel.style.display = "block";
 };
 
+// Tab Switching
+function showTab(tabName) {
+  // Hide all tab contents
+  const tabs = document.querySelectorAll('.tab-content');
+  tabs.forEach(tab => tab.classList.remove('active'));
+
+  // Remove active class from sidebar items
+  const sidebarItems = document.querySelectorAll('.sidebar li');
+  sidebarItems.forEach(item => item.classList.remove('active'));
+
+  // Show selected tab
+  document.getElementById(tabName).classList.add('active');
+  document.getElementById('tab-' + tabName).classList.add('active');
+}
+
 /* LOGIN */
-function teacherLogin(){
+function teacherLogin() {
   const email = tEmail.value.trim();
   const pass = tPassword.value.trim();
   if (!email || !pass) {
@@ -439,7 +716,7 @@ function teacherLogin(){
 }
 
 /* SIGNUP */
-function teacherSignup(){
+function teacherSignup() {
   const email = tEmailSignup.value.trim();
   const pass = tPasswordSignup.value.trim();
   const confirmPass = tConfirmPassword.value.trim();
@@ -477,40 +754,35 @@ function teacherSignup(){
     });
 }
 
-auth.onAuthStateChanged(u=>{
+auth.onAuthStateChanged(u => {
   container.style.display = u ? "none" : "block";
   teacherPanel.style.display = u ? "block" : "none";
-  if(u) {
+  if (u) {
     ResultClasses();
     loadPendingSignups(); // Load pending signups for admin
   }
 });
 
-function ResultClasses(){
+function ResultClasses() {
   firebase.database().ref("results").once("value", snap => {
-
-    resultClassSelect.innerHTML =
-      "<option value=''>Select Class</option>";
-
-    if(!snap.exists()) return;
-
+    resultClassSelect.innerHTML = "<option value=''>Select Class</option>";
+    if (!snap.exists()) return;
     snap.forEach(cls => {
       let opt = document.createElement("option");
-      opt.value = cls.key.replace("class_","");
-      opt.textContent = cls.key.replace("class_","");
+      opt.value = cls.key.replace("class_", "");
+      opt.textContent = cls.key.replace("class_", "");
       resultClassSelect.appendChild(opt);
     });
   });
 }
 
-function TestsForClass(cls){
-  resultTestSelect.innerHTML="<option value=''>Select Test</option>";
-  studentTestSelect.innerHTML="<option value=''>Select Test</option>";
-
-  firebase.database().ref(`tests/class_${cls}`).once("value", snap=>{
-    snap.forEach(t=>{
-      let o=document.createElement("option");
-      o.value=o.text=t.key;
+function TestsForClass(cls) {
+  resultTestSelect.innerHTML = "<option value=''>Select Test</option>";
+  studentTestSelect.innerHTML = "<option value=''>Select Test</option>";
+  firebase.database().ref(`tests/class_${cls}`).once("value", snap => {
+    snap.forEach(t => {
+      let o = document.createElement("option");
+      o.value = o.text = t.key;
       resultTestSelect.appendChild(o.cloneNode(true));
       studentTestSelect.appendChild(o);
     });
@@ -518,23 +790,23 @@ function TestsForClass(cls){
 }
 
 /* SAVE TEST */
-function saveTest(){
+function saveTest() {
   const cls = testClass.value;
   const name = testName.value.trim();
   const raw = bulkQuestions.value.trim();
   const duration = Number(testDuration.value);
   const limit = Number(questionLimit.value);
 
-  if(!cls || !name || !raw || !duration || !limit){
+  if (!cls || !name || !raw || !duration || !limit) {
     alert("Fill all fields including duration");
     return;
   }
 
-  const questions = raw.split("\n").map(l=>{
+  const questions = raw.split("\n").map(l => {
     const p = l.split("|");
     return {
       q: p[0].trim(),
-      options: p.slice(1,5).map(x=>x.trim()),
+      options: p.slice(1, 5).map(x => x.trim()),
       answer: Number(p[5])
     };
   });
@@ -546,36 +818,37 @@ function saveTest(){
       limit: limit,
       questions: questions
     })
-    .then(()=>{
+    .then(() => {
       alert("Test Saved with duration");
-      testName.value="";
-      bulkQuestions.value="";
-      testDuration.value="";
-      questionLimit.value="";
+      testName.value = "";
+      bulkQuestions.value = "";
+      testDuration.value = "";
+      questionLimit.value = "";
     });
 }
-function autoSaveAnswers(){
-  if(!currentStudent.roll || !currentTest) return;
 
+function autoSaveAnswers() {
+  if (!currentStudent.roll || !currentTest) return;
   firebase.database()
     .ref(`autosave/class_${currentStudent.class}/${currentTest}/${currentStudent.roll}`)
     .set({
       answers: studentAnswers,
+      marked: markedForReview,
       timeLeft: remainingTime,
+      currentIndex: currentQuestionIndex,
       updated: Date.now()
     });
 }
 
-function shuffleArray(arr){
-  for(let i = arr.length - 1; i > 0; i--){
+function shuffleArray(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [arr[i], arr[j]] = [arr[j], arr[i]];
   }
   return arr;
 }
 
-function startStudentTest(){
-
+function startStudentTest() {
   const cls = sClass.value;
   const test = studentTestSelect.value;
   const roll = sRoll.value;
@@ -590,7 +863,6 @@ function startStudentTest(){
     .ref(`results/class_${cls}/${test}/${roll}`)
     .once("value")
     .then(rSnap => {
-
       if (rSnap.exists()) {
         alert("Test already submitted.\nTeacher must allow reattempt.");
         return;
@@ -603,85 +875,121 @@ function startStudentTest(){
         .ref(`tests/class_${cls}/${test}`)
         .once("value")
         .then(snap => {
-
           if (!snap.exists()) {
             alert("Test not found");
             return;
           }
 
           const data = snap.val();
-
           let allQuestions = Object.values(data.questions || {});
           shuffleArray(allQuestions);
-
           const limit = data.limit || allQuestions.length;
           currentQuestions = allQuestions.slice(0, limit);
 
           studentAnswers = {};
+          markedForReview = {};
+          currentQuestionIndex = 0;
 
-          // ♻️ Restore auto-saved answers
+          // Restore auto-saved data
           firebase.database()
             .ref(`autosave/class_${cls}/${test}/${roll}`)
             .once("value")
             .then(saveSnap => {
-
               if (saveSnap.exists()) {
                 const saved = saveSnap.val();
                 studentAnswers = saved.answers || {};
+                markedForReview = saved.marked || {};
                 remainingTime = saved.timeLeft || (data.duration * 60);
+                currentQuestionIndex = saved.currentIndex || 0;
               } else {
                 remainingTime = data.duration * 60;
               }
 
               startTimer(Math.ceil(remainingTime / 60));
               renderTest();
+              updateQuestionMap();
 
               clearInterval(autoSaveInterval);
               autoSaveInterval = setInterval(autoSaveAnswers, 5000);
-
             });
-
         });
-
     });
 }
 
-function renderTest(){
-  testTitle.innerText = currentTest + " (" + currentQuestions.length + " Questions)";
+function renderTest() {
+  testTitle.innerText = currentTest;
   studentPanel.style.display = "none";
-  testArea.style.display = "block";
-  questionBox.innerHTML = "";
+  testArea.style.display = "flex";
+  displayQuestion(currentQuestionIndex);
+  updateNavigationButtons();
+}
 
-  currentQuestions.forEach(function(q, i){
-    let html = "<b>" + (i+1) + ". " + q.q + "</b><br>";
+function displayQuestion(index) {
+  const q = currentQuestions[index];
+  const questionDisplay = document.getElementById('questionDisplay');
+  questionDisplay.innerHTML = `
+    <h4>Question ${index + 1} of ${currentQuestions.length}</h4>
+    <p>${q.q}</p>
+    <div class="options">
+      ${q.options.map((opt, i) => `
+        <div class="option ${studentAnswers[index] === i ? 'selected' : ''}" onclick="selectOption(${index}, ${i})">
+          <input type="radio" name="q${index}" value="${i}" ${studentAnswers[index] === i ? 'checked' : ''}>
+          ${String.fromCharCode(65 + i)}. ${opt}
+        </div>
+      `).join('')}
+    </div>
+  `;
+  updateQuestionMap();
+}
 
-    q.options.forEach(function(o, j){
-      html += `
-        <label>
-          <input type="radio" name="q${i}"
-            ${studentAnswers[i] === j ? "checked" : ""}
-            onchange="studentAnswers[${i}] = ${j}">
-          ${o}
-        </label><br>
-      `;
-    });
+function selectOption(qIndex, optIndex) {
+  studentAnswers[qIndex] = optIndex;
+  displayQuestion(qIndex);
+}
 
-    html += "<hr>";
-    questionBox.innerHTML += html;
+function markForReview() {
+  markedForReview[currentQuestionIndex] = !markedForReview[currentQuestionIndex];
+  updateQuestionMap();
+}
+
+function navigateQuestion(direction) {
+  currentQuestionIndex += direction;
+  displayQuestion(currentQuestionIndex);
+  updateNavigationButtons();
+}
+
+function updateNavigationButtons() {
+  document.getElementById('prevBtn').disabled = currentQuestionIndex === 0;
+  document.getElementById('nextBtn').disabled = currentQuestionIndex === currentQuestions.length - 1;
+}
+
+function updateQuestionMap() {
+  const grid = document.getElementById('questionGrid');
+  grid.innerHTML = '';
+  currentQuestions.forEach((_, i) => {
+    const div = document.createElement('div');
+    div.className = 'q-num';
+    div.textContent = i + 1;
+    if (i === currentQuestionIndex) div.classList.add('current');
+    if (studentAnswers[i] !== undefined) div.classList.add('attempted');
+    else if (markedForReview[i]) div.classList.add('marked');
+    else div.classList.add('not-attempted');
+    div.onclick = () => {
+      currentQuestionIndex = i;
+      displayQuestion(i);
+      updateNavigationButtons();
+    };
+    grid.appendChild(div);
   });
 }
 
-function startTimer(minutes){
+function startTimer(minutes) {
   clearInterval(timerInterval);
-
   remainingTime = minutes * 60;
   updateTimerDisplay();
-
   timerInterval = setInterval(() => {
     remainingTime--;
-
     updateTimerDisplay();
-
     if (remainingTime <= 0) {
       clearInterval(timerInterval);
       alert("Time is up! Test will be submitted automatically.");
@@ -690,21 +998,18 @@ function startTimer(minutes){
   }, 1000);
 }
 
-function updateTimerDisplay(){
+function updateTimerDisplay() {
   const min = Math.floor(remainingTime / 60);
   const sec = remainingTime % 60;
-  timerBox.innerText = `Time Left: ${min}:${sec.toString().padStart(2,'0')}`;
+  timerBox.innerText = `Time Left: ${min}:${sec.toString().padStart(2, '0')}`;
 }
 
-function submitTest(){
-
+function submitTest() {
   clearInterval(autoSaveInterval);
   clearInterval(timerInterval);
-
-  disableUnloadWarning(); // ⚠️ must exist
+  disableUnloadWarning();
 
   let score = 0;
-
   currentQuestions.forEach((q, i) => {
     if (studentAnswers[i] === q.answer) score++;
   });
@@ -718,58 +1023,48 @@ function submitTest(){
       time: Date.now()
     })
     .then(() => {
-
-      // 🧹 Remove autosave data
+      // Remove autosave data
       firebase.database()
         .ref(`autosave/class_${currentStudent.class}/${currentTest}/${currentStudent.roll}`)
         .remove();
-
       alert("Test submitted successfully");
       location.reload();
     });
 }
 
-function Results(){
+function Results() {
   const cls = resultClassSelect.value;
   const test = resultTestSelect.value;
-  if(!cls || !test) return alert("Select class and test");
-
+  if (!cls || !test) return alert("Select class and test");
   firebase.database()
     .ref(`results/class_${cls}/${test}`)
     .once("value", snap => {
-
       resultBox.innerHTML = "";
-
-      if(!snap.exists()){
+      if (!snap.exists()) {
         resultBox.innerHTML = "<p>No results</p>";
         return;
       }
-
       snap.forEach(r => {
         const d = r.val();
-
         resultBox.innerHTML += `
           <div style="border:1px solid #ccc;padding:6px;margin:6px">
             <b>${d.name}</b> (Roll: ${r.key})<br>
             Score: ${d.score}/${d.total}<br>
-            <button onclick="allowReattempt('${cls}','${test}','${r.key}')">
-              Allow Reattempt
-            </button>
+            <button onclick="allowReattempt('${cls}','${test}','${r.key}')">Allow Reattempt</button>
           </div>
         `;
       });
     });
 }
 
-function allowReattempt(cls, test, roll){
-  if(!confirm("Allow this student to reattempt the test?")) return;
-
+function allowReattempt(cls, test, roll) {
+  if (!confirm("Allow this student to reattempt the test?")) return;
   firebase.database()
     .ref(`results/class_${cls}/${test}/${roll}`)
     .remove()
     .then(() => {
       alert("Reattempt allowed. Student can start test again.");
-      Results(); // refresh list
+      Results();
     });
 }
 
@@ -778,16 +1073,13 @@ function TestsForTeacher() {
   const testList = document.getElementById("testList");
   testList.innerHTML = "";
   if (!cls) return;
-
   firebase.database()
     .ref(`tests/class_${cls}`)
     .once("value", snap => {
-
       if (!snap.exists()) {
         testList.innerHTML = "<p>No tests found.</p>";
         return;
       }
-
       snap.forEach(t => {
         testList.innerHTML += `
           <div style="border:1px solid #ccc;padding:6px;margin:5px">
@@ -800,12 +1092,11 @@ function TestsForTeacher() {
     });
 }
 
-function editTest(cls, testName){
+function editTest(cls, testName) {
   firebase.database()
     .ref(`tests/class_${cls}/${testName}`)
-    .once("value", snap=>{
-      if(!snap.exists()) return;
-
+    .once("value", snap => {
+      if (!snap.exists()) return;
       const data = snap.val();
       testClass.value = cls;
       testName.value = testName;
@@ -817,15 +1108,15 @@ function editTest(cls, testName){
     });
 }
 
-function deleteTest(cls, testName){
-  if(confirm("Delete this test?")){
-    firebase.database().ref(`tests/class_${cls}/${testName}`).remove().then(()=>alert("Deleted"));
+function deleteTest(cls, testName) {
+  if (confirm("Delete this test?")) {
+    firebase.database().ref(`tests/class_${cls}/${testName}`).remove().then(() => alert("Deleted"));
   }
 }
 
-function logout(){ auth.signOut(); }
+function logout() { auth.signOut(); }
 
-function loadPendingSignups(){
+function loadPendingSignups() {
   const list = document.getElementById("pendingSignupsList");
   list.innerHTML = "<p>Loading...</p>";
   firebase.database().ref("pendingSignups").once("value", snap => {
@@ -847,13 +1138,13 @@ function loadPendingSignups(){
   });
 }
 
-function approveSignup(key, email, password){
+function approveSignup(key, email, password) {
   if (!confirm(`Approve signup for ${email}?`)) return;
   auth.createUserWithEmailAndPassword(email, password)
     .then(() => {
       firebase.database().ref(`pendingSignups/${key}`).remove();
       alert("Signup approved and user created.");
-      loadPendingSignups(); // Refresh list
+      loadPendingSignups();
     })
     .catch(e => {
       console.error("Approval failed:", e);
@@ -861,17 +1152,15 @@ function approveSignup(key, email, password){
     });
 }
 
-function rejectSignup(key){
+function rejectSignup(key) {
   if (!confirm("Reject this signup?")) return;
   firebase.database().ref(`pendingSignups/${key}`).remove()
     .then(() => {
       alert("Signup rejected.");
-      loadPendingSignups(); // Refresh list
+      loadPendingSignups();
     });
 }
 </script>
 
 </body>
 </html>
-
-
