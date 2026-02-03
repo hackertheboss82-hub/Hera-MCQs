@@ -7,7 +7,189 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+/* Theme Variables */
+:root {
+  --bg-color: #f4f6f8;
+  --text-color: #333;
+  --accent: #ff7a18;
+  --box-bg: #fff;
+}
 
+.dark-theme {
+  --bg-color: #1e1e2f;
+  --text-color: #fff;
+  --accent: #ffb347;
+  --box-bg: #111;
+}
+
+/* New Animated Login/Signup Styles */
+.container{
+  position:relative;
+  width:800px;
+  max-width:95%;
+  height:450px;
+  background: var(--box-bg);
+  border-radius:15px;
+  overflow:hidden;
+  box-shadow:0 0 30px rgba(255,120,50,0.5);
+}
+
+.orange-panel{
+  position:absolute;
+  width:50%;
+  height:100%;
+  right:0;
+  background: linear-gradient(135deg, var(--accent), #ffb347);
+  transition:.8s ease;
+  z-index:1;
+}
+
+.container.active .orange-panel{
+  transform: translateX(-100%);
+}
+
+.form-box{
+  position:absolute;
+  width:50%;
+  height:100%;
+  padding:40px;
+  color: var(--text-color);
+  z-index:2;
+}
+
+.login-box{
+  left:0;
+}
+
+.register-box{
+  right:0;
+  opacity:0;
+  pointer-events:none;
+}
+
+.container.active .register-box{
+  opacity:1;
+  pointer-events:auto;
+}
+
+.container.active .login-box{
+  opacity:0;
+  pointer-events:none;
+}
+
+.input-box input{
+  width:100%;
+  padding:12px;
+  border:none;
+  outline:none;
+  border-radius:5px;
+  background: #f0f0f0;
+}
+
+button{
+  width:100%;
+  padding:12px;
+  margin-top:15px;
+  border:none;
+  border-radius:5px;
+  background: var(--accent);
+  color: var(--text-color);
+  font-size:16px;
+  cursor:pointer;
+  transition: 0.3s;
+}
+
+button:hover {
+  opacity: 0.8;
+}
+
+.switch-btn{
+  background:transparent;
+  border:1px solid var(--text-color);
+}
+
+.panel-text{
+  position:absolute;
+  width:50%;
+  height:100%;
+  right:0;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  color: var(--text-color);
+  text-align:center;
+  padding:20px;
+  z-index:3;
+  transition:.8s ease;
+}
+
+.container.active .panel-text{
+  transform: translateX(-100%);
+}
+
+/* Professional Test Area Styling */
+#testArea {
+  background: var(--box-bg);
+  color: var(--text-color);
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  max-width: 800px;
+  margin: 20px auto;
+}
+
+#questionBox label {
+  display: block;
+  margin: 10px 0;
+  padding: 10px;
+  background: #f9f9f9;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+#questionBox label:hover {
+  background: var(--accent);
+  color: #fff;
+}
+
+#timerBox {
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .container {
+    width: 90%;
+    height: auto;
+  }
+  .form-box {
+    width: 100%;
+    position: static;
+  }
+  .orange-panel, .panel-text {
+    display: none;
+  }
+}
+
+/* Loading Spinner */
+.loading {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid var(--accent);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
 <style>
 body { font-family: Arial; background:#f4f6f8; }
 .box {
@@ -27,19 +209,49 @@ button { cursor:pointer; }
 <body>
 
 <!-- TEACHER LOGIN/SIGNUP -->
-<div class="box" id="loginBox">
-<h2>Teacher Login</h2>
-<input id="tEmail" placeholder="Email">
-<input id="tPassword" type="password" placeholder="Password">
-<button onclick="teacherLogin()">Login</button>
-<hr>
-<h2>Teacher Signup</h2>
-<input id="tEmailSignup" placeholder="Email">
-<input id="tPasswordSignup" type="password" placeholder="Password">
-<input id="tConfirmPassword" type="password" placeholder="Confirm Password">
-<button onclick="teacherSignup()">Signup</button>
-<p id="loginMsg" class="error"></p>
-<p id="signupMsg" class="success"></p>
+<!-- TEACHER LOGIN/SIGNUP -->
+<div class="container" id="container">
+  <!-- Orange Panel -->
+  <div class="orange-panel"></div>
+
+  <!-- Text Panel -->
+  <div class="panel-text">
+    <h1>Welcome Back!</h1>
+    <p>Login to continue</p>
+    <br>
+    <button class="switch-btn" onclick="showRegister()">Go to Signup</button>
+  </div>
+
+  <!-- Login Form -->
+  <div class="form-box login-box">
+    <h2>Login</h2>
+    <div class="input-box">
+      <input id="tEmail" type="email" placeholder="Email" required>
+    </div>
+    <div class="input-box">
+      <input id="tPassword" type="password" placeholder="Password" required>
+    </div>
+    <button onclick="teacherLogin()">Login</button>
+    <p id="loginMsg" class="error"></p>
+  </div>
+
+  <!-- Register Form -->
+  <div class="form-box register-box">
+    <h2>Signup</h2>
+    <div class="input-box">
+      <input id="tEmailSignup" type="email" placeholder="Email" required>
+    </div>
+    <div class="input-box">
+      <input id="tPasswordSignup" type="password" placeholder="Password" required>
+    </div>
+    <div class="input-box">
+      <input id="tConfirmPassword" type="password" placeholder="Confirm Password" required>
+    </div>
+    <button onclick="teacherSignup()">Signup</button>
+    <p id="signupMsg" class="success"></p>
+    <br><br>
+    <button class="switch-btn" onclick="showLogin()">Back to Login</button>
+  </div>
 </div>
 
 <!-- TEACHER PANEL -->
@@ -74,12 +286,23 @@ placeholder="Question | A | B | C | D | CorrectIndex"></textarea>
 <h3>Manage Tests</h3>
 <hr>
 <h3>Pending Teacher Signups</h3>
+
 <div id="pendingSignupsList"></div>
 <select id="manageClass" onchange="TestsForTeacher()">
-<option value="">Select Class</option>
+<<option value="">Select Class</option>
+<option value="jr_kg">Jr. KG</option>
+<option value="sr_kg">Sr. KG</option>
+<option value="1">Class 1</option>
+<option value="2">Class 2</option>
+<option value="3">Class 3</option>
+<option value="4">Class 4</option>
+<option value="5">Class 5</option>
+<option value="6">Class 6</option>
+<option value="7">Class 7</option>
 <option value="8">Class 8</option>
 <option value="9">Class 9</option>
 <option value="10">Class 10</option>
+<button id="themeToggle" onclick="toggleTheme()">Switch to Dark Theme</button>
 </select>
 
 <div id="testList"></div>
@@ -171,7 +394,11 @@ function teacherSignup(){
     loginMsg.innerText = "Passwords do not match.";
     return;
   }
-  // Save to pending instead of creating auth user
+  // Add loading
+  const btn = document.querySelector('.register-box button');
+  btn.innerHTML = '<div class="loading"></div> Signing up...';
+  btn.disabled = true;
+
   const signupData = { email, password: pass };
   firebase.database().ref("pendingSignups").push(signupData)
     .then(() => {
@@ -180,12 +407,16 @@ function teacherSignup(){
       tEmailSignup.value = "";
       tPasswordSignup.value = "";
       tConfirmPassword.value = "";
+      btn.innerHTML = 'Signup';
+      btn.disabled = false;
     })
     .catch(e => {
       console.error("Signup request failed:", e);
       loginMsg.innerText = e.message;
+      btn.innerHTML = 'Signup';
+      btn.disabled = false;
     });
-};
+};;
 
 function ResultClasses(){
   firebase.database().ref("results").once("value", snap => {
@@ -572,7 +803,33 @@ function rejectSignup(key){
       loadPendingSignups(); // Refresh list
     });
 }
+  let currentTheme = 'light';
+
+// Theme Toggle
+function toggleTheme() {
+  const body = document.body;
+  const btn = document.getElementById('themeToggle');
+  if (currentTheme === 'light') {
+    body.classList.add('dark-theme');
+    btn.innerText = 'Switch to Light Theme';
+    currentTheme = 'dark';
+  } else {
+    body.classList.remove('dark-theme');
+    btn.innerText = 'Switch to Dark Theme';
+    currentTheme = 'light';
+  }
+}
+
+// Show Register/Login
+function showRegister(){
+  document.getElementById("container").classList.add("active");
+}
+
+function showLogin(){
+  document.getElementById("container").classList.remove("active");
+}
 </script>
 
 </body>
 </html>
+
