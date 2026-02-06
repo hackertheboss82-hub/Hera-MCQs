@@ -420,11 +420,60 @@ button:hover {
   }
 }
 </style>
+/* Add after the existing @media query */
+.auth-section {
+  display: flex;
+  justify-content: center;
+  margin: 60px 0;
+  animation: fadeIn 0.5s ease-in;
+}
+.teacher-section {
+  margin-top: 40px;
+}
+.student-section {
+  margin-bottom: 80px;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.container {
+  box-shadow: 0 10px 30px rgba(0, 123, 255, 0.3); /* Blue shadow for CAT feel */
+}
+button {
+  background: linear-gradient(135deg, var(--accent), #0056b3);
+}
+@media (max-width: 768px) {
+  .auth-section {
+    margin: 20px 0;
+  }
+  .container {
+    width: 95%;
+    height: auto;
+    padding: 20px;
+  }
+  .form-box {
+    width: 100%;
+    padding: 20px;
+  }
+  button {
+    font-size: 14px;
+    padding: 10px;
+  }
+}
 </head>
 
 <body>
-
+<div class="section-toggle">
+  <button onclick="showTeacherSection()">Teacher Portal</button>
+  <button onclick="showStudentSection()">Student Portal</button>
+</div>
 <!-- TEACHER LOGIN/SIGNUP -->
+<div class="auth-section teacher-section">  <!-- ADD THIS LINE BEFORE the existing <div class="container" id="container"> -->
+  <div class="container" id="container">
+    <!-- [Existing teacher content remains unchanged] -->
+  </div>
+</div>  <!-- ADD THIS LINE AFTER the existing teacher container's closing </div> -->
 <div class="container" id="container">
   <!-- Orange Panel -->
   <div class="orange-panel"></div>
@@ -473,6 +522,12 @@ button:hover {
 <div id="studentContainer" style="display: block;">
   <div class="container">
     <div class="orange-panel"></div>
+    <!-- STUDENT LOGIN/SIGNUP -->
+<div class="auth-section student-section" id="studentContainer">  <!-- REPLACE the existing <div id="studentContainer" style="display: block;"> with this -->
+  <div class="container">
+    <!-- [Existing student content remains unchanged] -->
+  </div>
+</div>  <!-- ADD THIS LINE AFTER the existing student container's closing </div> -->
     <div class="panel-text">
       <h1>Student Portal</h1>
       <p>Login to take tests</p>
@@ -691,14 +746,14 @@ function toggleTheme() {
 }
 
 // Show Register/Login
-function showRegister() {
-  document.getElementById("container").classList.add("active");
+function showTeacherSection() {
+  document.querySelector('.teacher-section').style.display = 'block';
+  document.querySelector('.student-section').style.display = 'none';
 }
-
-function showLogin() {
-  document.getElementById("container").classList.remove("active");
+function showStudentSection() {
+  document.querySelector('.teacher-section').style.display = 'none';
+  document.querySelector('.student-section').style.display = 'block';
 }
-
 function disableUnloadWarning() {
   window.onbeforeunload = null;
 }
@@ -711,7 +766,8 @@ window.onbeforeunload = function () {
 
 window.onload = () => {
   studentPanel.style.display = "block";
-  testArea.style.display = "none";  // Explicitly hide
+  testArea.style.display = "none";
+  showStudentSection();  // Show student by default
 };
 // Tab Switching
 function showTab(tabName) {
@@ -741,6 +797,15 @@ function teacherLogin() {
       console.error("Login error:", e);
       loginMsg.innerText = e.message;
     });
+}
+  try {
+  auth.signInWithEmailAndPassword(email, pass)
+    .catch(e => {
+      console.error("Login error:", e);
+      loginMsg.innerText = e.message;
+    });
+} catch (error) {
+  console.error("Unexpected error:", error);
 }
 
 /* SIGNUP */
@@ -783,36 +848,43 @@ function teacherSignup() {
 }
 auth.onAuthStateChanged(u => {
   if (u) {
-    // Check if teacher by looking in 'teachers' node
-    const teacherKey = u.email.replace(/\./g, '_');
-    firebase.database().ref(`teachers/${teacherKey}`).once("value", snap => {
-      const isTeacher = snap.exists();
-      console.log("User:", u.email, "Is Teacher:", isTeacher);  // DEBUG: Remove after testing
-      container.style.display = "none";
-      teacherPanel.style.display = isTeacher ? "block" : "none";
-      studentPanel.style.display = isTeacher ? "none" : "block";
-      studentContainer.style.display = "none";
-      testArea.style.display = "none";  // NEW: Always hide test area on login
-      if (isTeacher) {
-        ResultClasses();
-        loadPendingSignups();
-        // Load dashboard stats here
-        firebase.database().ref("tests").once("value", snap => {
-          let totalTests = 0;
-          snap.forEach(cls => totalTests += Object.keys(cls.val() || {}).length);
-          dashboardStats.innerHTML = `<p>Total Tests: ${totalTests}</p>`;
-        });
-      }
-    });
+    const cachedIsTeacher = localStorage.getItem(`isTeacher_${u.email}`);
+    if (cachedIsTeacher !== null) {
+      const isTeacher = cachedIsTeacher === 'true';
+      applyAuthState(isTeacher, u);
+    } else {
+      const teacherKey = u.email.replace(/\./g, '_');
+      firebase.database().ref(`teachers/${teacherKey}`).once("value", snap => {
+        const isTeacher = snap.exists();
+        localStorage.setItem(`isTeacher_${u.email}`, isTeacher);
+        applyAuthState(isTeacher, u);
+      }).catch(e => console.error("Firebase error:", e));
+    }
   } else {
     container.style.display = "block";
     teacherPanel.style.display = "none";
     studentPanel.style.display = "block";
     studentContainer.style.display = "block";
-    testArea.style.display = "none";  // Ensure test area is hidden
+    testArea.style.display = "none";
   }
 });
 
+function applyAuthState(isTeacher, u) {
+  container.style.display = "none";
+  teacherPanel.style.display = isTeacher ? "block" : "none";
+  studentPanel.style.display = isTeacher ? "none" : "block";
+  studentContainer.style.display = "none";
+  testArea.style.display = "none";
+  if (isTeacher) {
+    ResultClasses();
+    loadPendingSignups();
+    firebase.database().ref("tests").once("value", snap => {
+      let totalTests = 0;
+      snap.forEach(cls => totalTests += Object.keys(cls.val() || {}).length);
+      dashboardStats.innerHTML = `<p>Total Tests: ${totalTests}</p>`;
+    }).catch(e => console.error("Firebase error:", e));
+  }
+}
 // Student Auth Functions
 function showStudentRegister() {
   document.getElementById("studentContainer").classList.add("active");
@@ -1318,5 +1390,6 @@ function rejectSignup(key) {
 
 </body>
 </html>
+
 
 
