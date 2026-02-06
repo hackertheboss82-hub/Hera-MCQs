@@ -711,8 +711,8 @@ window.onbeforeunload = function () {
 
 window.onload = () => {
   studentPanel.style.display = "block";
+  testArea.style.display = "none";  // Explicitly hide
 };
-
 // Tab Switching
 function showTab(tabName) {
   // Hide all tab contents
@@ -784,12 +784,15 @@ function teacherSignup() {
 auth.onAuthStateChanged(u => {
   if (u) {
     // Check if teacher by looking in 'teachers' node
-    firebase.database().ref(`teachers/${u.email.replace('.', '_')}`).once("value", snap => {
+    const teacherKey = u.email.replace(/\./g, '_');
+    firebase.database().ref(`teachers/${teacherKey}`).once("value", snap => {
       const isTeacher = snap.exists();
+      console.log("User:", u.email, "Is Teacher:", isTeacher);  // DEBUG: Remove after testing
       container.style.display = "none";
       teacherPanel.style.display = isTeacher ? "block" : "none";
       studentPanel.style.display = isTeacher ? "none" : "block";
       studentContainer.style.display = "none";
+      testArea.style.display = "none";  // NEW: Always hide test area on login
       if (isTeacher) {
         ResultClasses();
         loadPendingSignups();
@@ -806,6 +809,7 @@ auth.onAuthStateChanged(u => {
     teacherPanel.style.display = "none";
     studentPanel.style.display = "block";
     studentContainer.style.display = "block";
+    testArea.style.display = "none";  // Ensure test area is hidden
   }
 });
 
@@ -1259,7 +1263,10 @@ function deleteTest(cls, testName) {
   }
 }
 
-function logout() { auth.signOut(); }
+function logout() {
+  auth.signOut();
+  testArea.style.display = "none";  // NEW: Hide test area on logout
+}
 
 function loadPendingSignups() {
   const list = document.getElementById("pendingSignupsList");
@@ -1288,6 +1295,8 @@ function approveSignup(key, email, password) {
   auth.createUserWithEmailAndPassword(email, password)
     .then(() => {
       firebase.database().ref(`pendingSignups/${key}`).remove();
+      // NEW: Save approved teacher
+      firebase.database().ref(`teachers/${email.replace(/\./g, '_')}`).set({ email, approved: true });
       alert("Signup approved and user created.");
       loadPendingSignups();
     })
@@ -1309,4 +1318,5 @@ function rejectSignup(key) {
 
 </body>
 </html>
+
 
