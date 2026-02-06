@@ -1063,35 +1063,45 @@ function startStudentTest() {
           currentQuestionIndex = 0;
 
           // Restore auto-saved data
-          firebase.database()
-            .ref(`autosave/class_${cls}/${test}/${roll}`)
-            .once("value")
-            .then(saveSnap            if (saveSnap.exists()) {
-              const saved = saveSnap.val();
-              studentAnswers = saved.answers || {};
-              markedForReview = saved.marked || {};
-              remainingTime = saved.timeLeft || (data.duration * 60);
-              currentQuestionIndex = saved.currentIndex || 0;
-            } else {
-              remainingTime = data.duration * 60;
-            }
+   firebase.database().ref("tests/" + testId).once("value")
+.then(snapshot => {
+  const data = snapshot.val();
 
-            startTimer(Math.ceil(remainingTime / 60));
-            renderTest();
-            // In startStudentTest, after renderTest()
-            document.documentElement.requestFullscreen();
-            document.addEventListener('contextmenu', e => e.preventDefault());
-            document.addEventListener('fullscreenchange', () => {
-              if (!document.fullscreenElement) alert('Exited fullscreen!');
-            });
-            document.addEventListener('visibilitychange', () => {
-              if (document.hidden) alert('Tab switched!');
-            });
-            updateQuestionMap();
+  firebase.database().ref(`savedTests/${roll}/${testId}`).once("value")
+  .then(saveSnap => {
 
-            clearInterval(autoSaveInterval);
-            autoSaveInterval = setInterval(autoSaveAnswers, 5000);
-          });
+    if (saveSnap.exists()) {
+      const saved = saveSnap.val();
+      studentAnswers = saved.answers || {};
+      markedForReview = saved.marked || {};
+      remainingTime = saved.timeLeft || (data.duration * 60);
+      currentQuestionIndex = saved.currentIndex || 0;
+    } else {
+      remainingTime = data.duration * 60;
+    }
+
+    startTimer(Math.ceil(remainingTime / 60));
+    renderTest();
+    document.documentElement.requestFullscreen();
+    document.addEventListener('contextmenu', e => e.preventDefault());
+    updateQuestionMap();
+
+    clearInterval(autoSaveInterval);
+    autoSaveInterval = setInterval(autoSaveAnswers, 5000);
+  });
+});
+
+
+  startTimer(Math.ceil(remainingTime / 60));
+  renderTest();
+  document.documentElement.requestFullscreen();
+  document.addEventListener('contextmenu', e => e.preventDefault());
+  updateQuestionMap();
+
+  clearInterval(autoSaveInterval);
+  autoSaveInterval = setInterval(autoSaveAnswers, 5000);
+});
+;
         });
     });
 }
@@ -1387,3 +1397,4 @@ function rejectSignup(key) {
 
 </body>
 </html>
+
