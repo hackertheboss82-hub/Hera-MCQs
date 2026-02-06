@@ -419,8 +419,8 @@ button:hover {
     border-bottom: 1px solid #ccc;
   }
 }
-</style>
-/* Add after the existing @media query */
+
+/* New Styles for Separation and Polish */
 .auth-section {
   display: flex;
   justify-content: center;
@@ -438,7 +438,7 @@ button:hover {
   to { opacity: 1; transform: translateY(0); }
 }
 .container {
-  box-shadow: 0 10px 30px rgba(0, 123, 255, 0.3); /* Blue shadow for CAT feel */
+  box-shadow: 0 10px 30px rgba(0, 123, 255, 0.3);
 }
 button {
   background: linear-gradient(135deg, var(--accent), #0056b3);
@@ -461,6 +461,7 @@ button {
     padding: 10px;
   }
 }
+</style>
 </head>
 
 <body>
@@ -468,66 +469,55 @@ button {
   <button onclick="showTeacherSection()">Teacher Portal</button>
   <button onclick="showStudentSection()">Student Portal</button>
 </div>
+
 <!-- TEACHER LOGIN/SIGNUP -->
-<div class="auth-section teacher-section">  <!-- ADD THIS LINE BEFORE the existing <div class="container" id="container"> -->
+<div class="auth-section teacher-section">
   <div class="container" id="container">
-    <!-- [Existing teacher content remains unchanged] -->
-  </div>
-</div>  <!-- ADD THIS LINE AFTER the existing teacher container's closing </div> -->
-<div class="container" id="container">
-  <!-- Orange Panel -->
-  <div class="orange-panel"></div>
-
-  <!-- Text Panel -->
-  <div class="panel-text">
-    <h1>Welcome Back!</h1>
-    <p>Login to continue</p>
-    <br>
-    <button class="switch-btn" onclick="showRegister()">Go to Signup</button>
-  </div>
-
-  <!-- Login Form -->
-  <div class="form-box login-box">
-    <h2>Login</h2>
-    <div class="input-box">
-      <input id="tEmail" type="email" placeholder="Email" required>
+    <!-- Orange Panel -->
+    <div class="orange-panel"></div>
+    <!-- Text Panel -->
+    <div class="panel-text">
+      <h1>Welcome Back!</h1>
+      <p>Login to continue</p>
+      <br>
+      <button class="switch-btn" onclick="showRegister()">Go to Signup</button>
     </div>
-    <div class="input-box">
-      <input id="tPassword" type="password" placeholder="Password" required>
+    <!-- Login Form -->
+    <div class="form-box login-box">
+      <h2>Login</h2>
+      <div class="input-box">
+        <input id="tEmail" type="email" placeholder="Email" required>
+      </div>
+      <div class="input-box">
+        <input id="tPassword" type="password" placeholder="Password" required>
+      </div>
+      <button onclick="teacherLogin()">Login</button>
+      <p id="loginMsg" class="error"></p>
     </div>
-    <button onclick="teacherLogin()">Login</button>
-    <p id="loginMsg" class="error"></p>
-  </div>
-
-  <!-- Register Form -->
-  <div class="form-box register-box">
-    <h2>Signup</h2>
-    <div class="input-box">
-      <input id="tEmailSignup" type="email" placeholder="Email" required>
+    <!-- Register Form -->
+    <div class="form-box register-box">
+      <h2>Signup</h2>
+      <div class="input-box">
+        <input id="tEmailSignup" type="email" placeholder="Email" required>
+      </div>
+      <div class="input-box">
+        <input id="tPasswordSignup" type="password" placeholder="Password" required>
+      </div>
+      <div class="input-box">
+        <input id="tConfirmPassword" type="password" placeholder="Confirm Password" required>
+      </div>
+      <button onclick="teacherSignup()">Signup</button>
+      <p id="signupMsg" class="success"></p>
+      <br><br>
+      <button class="switch-btn" onclick="showLogin()">Back to Login</button>
     </div>
-    <div class="input-box">
-      <input id="tPasswordSignup" type="password" placeholder="Password" required>
-    </div>
-    <div class="input-box">
-      <input id="tConfirmPassword" type="password" placeholder="Confirm Password" required>
-    </div>
-    <button onclick="teacherSignup()">Signup</button>
-    <p id="signupMsg" class="success"></p>
-    <br><br>
-    <button class="switch-btn" onclick="showLogin()">Back to Login</button>
   </div>
 </div>
 
 <!-- STUDENT LOGIN/SIGNUP -->
-<div id="studentContainer" style="display: block;">
+<div class="auth-section student-section" id="studentContainer">
   <div class="container">
     <div class="orange-panel"></div>
-    <!-- STUDENT LOGIN/SIGNUP -->
-<div class="auth-section student-section" id="studentContainer">  <!-- REPLACE the existing <div id="studentContainer" style="display: block;"> with this -->
-  <div class="container">
-    <!-- [Existing student content remains unchanged] -->
-  </div>
-</div>  <!-- ADD THIS LINE AFTER the existing student container's closing </div> -->
     <div class="panel-text">
       <h1>Student Portal</h1>
       <p>Login to take tests</p>
@@ -570,7 +560,7 @@ button {
       <!-- Dashboard Tab -->
       <div id="dashboard" class="tab-content active">
         <h3>Dashboard</h3>
-        <p>Welcome to the Hera MCQ System. Use the sidebar to navigate.</p>
+                <p>Welcome to the Hera MCQ System. Use the sidebar to navigate.</p>
         <div id="dashboardStats">
           <p>Loading stats...</p>
         </div>
@@ -650,7 +640,7 @@ button {
       <!-- Approvals Tab -->
       <div id="approvals" class="tab-content">
         <h3>Pending Teacher Signups</h3>
-                <div id="pendingSignupsList"></div>
+        <div id="pendingSignupsList"></div>
       </div>
 
       <button id="themeToggle" onclick="toggleTheme()">Switch to Dark Theme</button>
@@ -746,6 +736,14 @@ function toggleTheme() {
 }
 
 // Show Register/Login
+function showRegister() {
+  document.getElementById("container").classList.add("active");
+}
+
+function showLogin() {
+  document.getElementById("container").classList.remove("active");
+}
+
 function showTeacherSection() {
   document.querySelector('.teacher-section').style.display = 'block';
   document.querySelector('.student-section').style.display = 'none';
@@ -754,6 +752,7 @@ function showStudentSection() {
   document.querySelector('.teacher-section').style.display = 'none';
   document.querySelector('.student-section').style.display = 'block';
 }
+
 function disableUnloadWarning() {
   window.onbeforeunload = null;
 }
@@ -769,6 +768,7 @@ window.onload = () => {
   testArea.style.display = "none";
   showStudentSection();  // Show student by default
 };
+
 // Tab Switching
 function showTab(tabName) {
   // Hide all tab contents
@@ -792,20 +792,15 @@ function teacherLogin() {
     loginMsg.innerText = "Enter email and password.";
     return;
   }
-  auth.signInWithEmailAndPassword(email, pass)
-    .catch(e => {
-      console.error("Login error:", e);
-      loginMsg.innerText = e.message;
-    });
-}
   try {
-  auth.signInWithEmailAndPassword(email, pass)
-    .catch(e => {
-      console.error("Login error:", e);
-      loginMsg.innerText = e.message;
-    });
-} catch (error) {
-  console.error("Unexpected error:", error);
+    auth.signInWithEmailAndPassword(email, pass)
+      .catch(e => {
+        console.error("Login error:", e);
+        loginMsg.innerText = e.message;
+      });
+  } catch (error) {
+    console.error("Unexpected error:", error);
+  }
 }
 
 /* SIGNUP */
@@ -846,6 +841,7 @@ function teacherSignup() {
       btn.disabled = false;
     });
 }
+
 auth.onAuthStateChanged(u => {
   if (u) {
     const cachedIsTeacher = localStorage.getItem(`isTeacher_${u.email}`);
@@ -885,12 +881,13 @@ function applyAuthState(isTeacher, u) {
     }).catch(e => console.error("Firebase error:", e));
   }
 }
+
 // Student Auth Functions
 function showStudentRegister() {
-  document.getElementById("studentContainer").classList.add("active");
+  document.querySelector("#studentContainer .container").classList.add("active");
 }
 function showStudentLogin() {
-  document.getElementById("studentContainer").classList.remove("active");
+  document.querySelector("#studentContainer .container").classList.remove("active");
 }
 function studentLogin() {
   const email = studentEmail.value.trim();
@@ -1069,33 +1066,32 @@ function startStudentTest() {
           firebase.database()
             .ref(`autosave/class_${cls}/${test}/${roll}`)
             .once("value")
-            .then(saveSnap => {
-              if (saveSnap.exists()) {
-                const saved = saveSnap.val();
-                studentAnswers = saved.answers || {};
-                markedForReview = saved.marked || {};
-                remainingTime = saved.timeLeft || (data.duration * 60);
-                currentQuestionIndex = saved.currentIndex || 0;
-              } else {
-                remainingTime = data.duration * 60;
-              }
+            .then(saveSnap            if (saveSnap.exists()) {
+              const saved = saveSnap.val();
+              studentAnswers = saved.answers || {};
+              markedForReview = saved.marked || {};
+              remainingTime = saved.timeLeft || (data.duration * 60);
+              currentQuestionIndex = saved.currentIndex || 0;
+            } else {
+              remainingTime = data.duration * 60;
+            }
 
-              startTimer(Math.ceil(remainingTime / 60));
-              renderTest();
-              // In startStudentTest, after renderTest()
-              document.documentElement.requestFullscreen();
-              document.addEventListener('contextmenu', e => e.preventDefault());
-              document.addEventListener('fullscreenchange', () => {
-                if (!document.fullscreenElement) alert('Exited fullscreen!');
-              });
-              document.addEventListener('visibilitychange', () => {
-                if (document.hidden) alert('Tab switched!');
-              });
-              updateQuestionMap();
-
-              clearInterval(autoSaveInterval);
-              autoSaveInterval = setInterval(autoSaveAnswers, 5000);
+            startTimer(Math.ceil(remainingTime / 60));
+            renderTest();
+            // In startStudentTest, after renderTest()
+            document.documentElement.requestFullscreen();
+            document.addEventListener('contextmenu', e => e.preventDefault());
+            document.addEventListener('fullscreenchange', () => {
+              if (!document.fullscreenElement) alert('Exited fullscreen!');
             });
+            document.addEventListener('visibilitychange', () => {
+              if (document.hidden) alert('Tab switched!');
+            });
+            updateQuestionMap();
+
+            clearInterval(autoSaveInterval);
+            autoSaveInterval = setInterval(autoSaveAnswers, 5000);
+          });
         });
     });
 }
@@ -1223,7 +1219,8 @@ function Results() {
   const test = resultTestSelect.value;
   if (!cls || !test) return alert("Select class and test");
   firebase.database()
-      .once("value", snap => {
+    .ref(`results/class_${cls}/${test}`)
+    .once("value", snap => {
       resultBox.innerHTML = "";
       if (!snap.exists()) {
         resultBox.innerHTML = "<p>No results</p>";
@@ -1390,6 +1387,3 @@ function rejectSignup(key) {
 
 </body>
 </html>
-
-
-
