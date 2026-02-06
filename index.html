@@ -4,12 +4,14 @@
 <meta charset="UTF-8">
 <title>Hera MCQ System</title>
 <link rel="icon" href="data:,">
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css.all.min.css">
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
 <style>
-body { font-family: Arial; background: var(--bg-color); color: var(--text-color); transition: 0.3s; margin: 0; padding: 0; }
+body { font-family: 'Roboto', Arial; background: var(--bg-color); color: var(--text-color); transition: 0.3s; margin: 0; padding: 0; }
 .box {
   width:360px; margin:40px auto; padding:20px;
   background: var(--box-bg); border-radius:8px; box-shadow:0 0 10px rgba(0,0,0,0.1);
@@ -28,14 +30,14 @@ button { cursor:pointer; }
 :root {
   --bg-color: #f4f6f8;
   --text-color: #333;
-  --accent: #ff7a18;
+  --accent: #007bff;
   --box-bg: #fff;
 }
 
 .dark-theme {
   --bg-color: #1e1e2f;
   --text-color: #fff;
-  --accent: #ffb347;
+  --accent: #0056b3;
   --box-bg: #111;
 }
 
@@ -48,7 +50,7 @@ button { cursor:pointer; }
   background: var(--box-bg);
   border-radius:15px;
   overflow:hidden;
-  box-shadow:0 0 30px rgba(255,120,50,0.5);
+  box-shadow:0 0 30px rgba(0,120,255,0.5);
 }
 
 .orange-panel{
@@ -56,7 +58,7 @@ button { cursor:pointer; }
   width:50%;
   height:100%;
   right:0;
-  background: linear-gradient(135deg, var(--accent), #ffb347);
+  background: linear-gradient(135deg, var(--accent), #0056b3);
   transition:.8s ease;
   z-index:1;
 }
@@ -467,6 +469,34 @@ button:hover {
   </div>
 </div>
 
+<!-- STUDENT LOGIN/SIGNUP -->
+<div id="studentContainer" style="display: block;">
+  <div class="container">
+    <div class="orange-panel"></div>
+    <div class="panel-text">
+      <h1>Student Portal</h1>
+      <p>Login to take tests</p>
+      <button class="switch-btn" onclick="showStudentRegister()">Go to Signup</button>
+    </div>
+    <div class="form-box login-box">
+      <h2>Login</h2>
+      <input id="studentEmail" type="email" placeholder="Email" required>
+      <input id="studentPassword" type="password" placeholder="Password" required>
+      <button onclick="studentLogin()">Login</button>
+      <p id="studentLoginMsg" class="error"></p>
+    </div>
+    <div class="form-box register-box">
+      <h2>Signup</h2>
+      <input id="studentEmailSignup" type="email" placeholder="Email" required>
+      <input id="studentPasswordSignup" type="password" placeholder="Password" required>
+      <input id="studentConfirmPassword" type="password" placeholder="Confirm Password" required>
+      <button onclick="studentSignup()">Signup</button>
+      <p id="studentSignupMsg" class="success"></p>
+      <button class="switch-btn" onclick="showStudentLogin()">Back to Login</button>
+    </div>
+  </div>
+</div>
+
 <!-- TEACHER PANEL -->
 <div id="teacherPanel">
   <div class="header">Hera MCQ System</div>
@@ -486,7 +516,6 @@ button:hover {
       <div id="dashboard" class="tab-content active">
         <h3>Dashboard</h3>
         <p>Welcome to the Hera MCQ System. Use the sidebar to navigate.</p>
-        <!-- Add summary stats here if needed, e.g., total tests, pending approvals, etc. -->
         <div id="dashboardStats">
           <p>Loading stats...</p>
         </div>
@@ -514,7 +543,8 @@ button:hover {
         <input id="testDuration" type="number" placeholder="Duration (minutes)">
         <input id="questionLimit" type="number" placeholder="Questions to show (e.g. 30)">
         <textarea id="bulkQuestions" rows="6" placeholder="Question | A | B | C | D | CorrectIndex"></textarea>
-        <button onclick="saveTest()">Save Test</button>
+        <input type="file" id="questionFile" accept=".csv">
+        <button onclick="saveTest()"><i class="fas fa-save"></i> Save Test</button>
       </div>
 
       <!-- Manage Tests Tab -->
@@ -558,13 +588,14 @@ button:hover {
         </select>
         <select id="resultTestSelect"></select>
         <button onclick="Results()">Results</button>
+        <button onclick="exportResults()">Export CSV</button>
         <div id="resultBox"></div>
       </div>
 
       <!-- Approvals Tab -->
       <div id="approvals" class="tab-content">
         <h3>Pending Teacher Signups</h3>
-        <div id="pendingSignupsList"></div>
+                <div id="pendingSignupsList"></div>
       </div>
 
       <button id="themeToggle" onclick="toggleTheme()">Switch to Dark Theme</button>
@@ -573,11 +604,8 @@ button:hover {
 </div>
 
 <!-- STUDENT PANEL -->
-<div class="box" id="studentPanel">
+<div class="box" id="studentPanel" style="display: none;">
 <h3>Student Test Portal</h3>
-<input id="sName" placeholder="Student Name">
-<input id="sRoll" placeholder="Roll Number">
-
 <select id="sClass" onchange="TestsForClass(this.value)">
 <option value="">Select Class</option>
 <option value="jr_kg">Jr. KG</option>
@@ -605,6 +633,7 @@ button:hover {
 <div id="testArea">
   <div class="test-header">
     <span id="testTitle"></span>
+    <progress value="0" max="100" id="progressBar"></progress>
     <span id="timerBox"></span>
   </div>
   <div class="test-body">
@@ -617,8 +646,7 @@ button:hover {
       <div class="legend">
         <div><span style="background: #e0e0e0;"></span> Not Attempted</div>
         <div><span style="background: #4caf50;"></span> Attempted</div>
-        <div><span style="background: #ff9800;"></span>
-                <div><span style="background: #ff9800;"></span> Marked for Review</div>
+        <div><span style="background: #ff9800;"></span> Marked for Review</div>
       </div>
     </div>
   </div>
@@ -657,7 +685,7 @@ function toggleTheme() {
     currentTheme = 'dark';
   } else {
     body.classList.remove('dark-theme');
-    btn.innerText = 'Switch to Dark Theme';
+    btn.innerText = 'Switch to Light Theme';
     currentTheme = 'light';
   }
 }
@@ -755,14 +783,77 @@ function teacherSignup() {
 }
 
 auth.onAuthStateChanged(u => {
-  container.style.display = u ? "none" : "block";
-  teacherPanel.style.display = u ? "block" : "none";
-  studentPanel.style.display = u ? "none" : "block";  // NEW: Hide student panel for logged-in teachers
   if (u) {
-    ResultClasses();
-    loadPendingSignups(); // Load pending signups for admin
+    // Check if teacher (e.g., if email ends with a teacher domain or has approvals)
+    firebase.database().ref("pendingSignups").orderByChild("email").equalTo(u.email).once("value", snap => {
+      const isTeacher = snap.exists() || u.email.includes("teacher");  // Adjust logic as needed
+      container.style.display = "none";
+      teacherPanel.style.display = isTeacher ? "block" : "none";
+      studentPanel.style.display = isTeacher ? "none" : "block";
+      studentContainer.style.display = "none";
+      if (isTeacher) {
+        ResultClasses();
+        loadPendingSignups();
+        // Load dashboard stats here
+        firebase.database().ref("tests").once("value", snap => {
+          let totalTests = 0;
+          snap.forEach(cls => totalTests += Object.keys(cls.val() || {}).length);
+          dashboardStats.innerHTML = `<p>Total Tests: ${totalTests}</p>`;
+        });
+      }
+    });
+  } else {
+    container.style.display = "block";
+    teacherPanel.style.display = "none";
+    studentPanel.style.display = "block";
+    studentContainer.style.display = "block";
   }
 });
+
+// Student Auth Functions
+function showStudentRegister() {
+  document.getElementById("studentContainer").classList.add("active");
+}
+function showStudentLogin() {
+  document.getElementById("studentContainer").classList.remove("active");
+}
+function studentLogin() {
+  const email = studentEmail.value.trim();
+  const pass = studentPassword.value.trim();
+  if (!email || !pass) {
+    studentLoginMsg.innerText = "Enter email and password.";
+    return;
+  }
+  auth.signInWithEmailAndPassword(email, pass)
+    .catch(e => {
+      studentLoginMsg.innerText = e.message;
+    });
+}
+function studentSignup() {
+  const email = studentEmailSignup.value.trim();
+  const pass = studentPasswordSignup.value.trim();
+  const confirmPass = studentConfirmPassword.value.trim();
+  if (!email || !pass || !confirmPass) {
+    studentSignupMsg.innerText = "";
+    studentLoginMsg.innerText = "Fill all fields.";
+    return;
+  }
+  if (pass !== confirmPass) {
+    studentSignupMsg.innerText = "";
+    studentLoginMsg.innerText = "Passwords do not match.";
+    return;
+  }
+  auth.createUserWithEmailAndPassword(email, pass)
+    .then(() => {
+      studentSignupMsg.innerText = "Signup successful! Login now.";
+      studentEmailSignup.value = "";
+      studentPasswordSignup.value = "";
+      studentConfirmPassword.value = "";
+    })
+    .catch(e => {
+      studentLoginMsg.innerText = e.message;
+    });
+}
 
 function ResultClasses() {
   firebase.database().ref("results").once("value", snap => {
@@ -828,6 +919,13 @@ function saveTest() {
     });
 }
 
+questionFile.addEventListener('change', e => {
+  const file = e.target.files[0];
+  const reader = new FileReader();
+  reader.onload = () => { bulkQuestions.value = reader.result; };
+  reader.readAsText(file);
+});
+
 function autoSaveAnswers() {
   if (!currentStudent.roll || !currentTest) return;
   firebase.database()
@@ -850,13 +948,14 @@ function shuffleArray(arr) {
 }
 
 function startStudentTest() {
+  if (!auth.currentUser) { alert("Login required"); return; }
   const cls = sClass.value;
   const test = studentTestSelect.value;
-  const roll = sRoll.value;
-  const name = sName.value;
+  const roll = auth.currentUser.email;  // Use email as roll
+  const name = auth.currentUser.displayName || auth.currentUser.email;  // Or prompt for name
 
-  if (!cls || !test || !roll || !name) {
-    alert("Please fill all details");
+  if (!cls || !test) {
+    alert("Please select class and test");
     return;
   }
 
@@ -908,6 +1007,15 @@ function startStudentTest() {
 
               startTimer(Math.ceil(remainingTime / 60));
               renderTest();
+              // In startStudentTest, after renderTest()
+              document.documentElement.requestFullscreen();
+              document.addEventListener('contextmenu', e => e.preventDefault());
+              document.addEventListener('fullscreenchange', () => {
+                if (!document.fullscreenElement) alert('Exited fullscreen!');
+              });
+              document.addEventListener('visibilitychange', () => {
+                if (document.hidden) alert('Tab switched!');
+              });
               updateQuestionMap();
 
               clearInterval(autoSaveInterval);
@@ -940,6 +1048,7 @@ function displayQuestion(index) {
       `).join('')}
     </div>
   `;
+  progressBar.value = ((index + 1) / currentQuestions.length) * 100;
   updateQuestionMap();
 }
 
@@ -1021,6 +1130,7 @@ function submitTest() {
       name: currentStudent.name,
       score: score,
       total: currentQuestions.length,
+      answers: studentAnswers,  // NEW: Save answers
       time: Date.now()
     })
     .then(() => {
@@ -1038,8 +1148,7 @@ function Results() {
   const test = resultTestSelect.value;
   if (!cls || !test) return alert("Select class and test");
   firebase.database()
-    .ref(`results/class_${cls}/${test}`)
-    .once("value", snap => {
+      .once("value", snap => {
       resultBox.innerHTML = "";
       if (!snap.exists()) {
         resultBox.innerHTML = "<p>No results</p>";
@@ -1051,11 +1160,31 @@ function Results() {
           <div style="border:1px solid #ccc;padding:6px;margin:6px">
             <b>${d.name}</b> (Roll: ${r.key})<br>
             Score: ${d.score}/${d.total}<br>
+            <button onclick="viewDetails('${cls}','${test}','${r.key}')">View Details</button>
             <button onclick="allowReattempt('${cls}','${test}','${r.key}')">Allow Reattempt</button>
           </div>
         `;
       });
     });
+}
+
+function exportResults() {
+  const cls = resultClassSelect.value;
+  const test = resultTestSelect.value;
+  if (!cls || !test) return alert("Select class and test");
+  firebase.database().ref(`results/class_${cls}/${test}`).once("value", snap => {
+    let csv = "Name,Roll,Score,Total\n";
+    snap.forEach(r => {
+      const d = r.val();
+      csv += `${d.name},${r.key},${d.score},${d.total}\n`;
+    });
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'results.csv';
+    a.click();
+  });
 }
 
 function allowReattempt(cls, test, roll) {
@@ -1067,6 +1196,22 @@ function allowReattempt(cls, test, roll) {
       alert("Reattempt allowed. Student can start test again.");
       Results();
     });
+}
+
+function viewDetails(cls, test, roll) {
+  firebase.database().ref(`results/class_${cls}/${test}/${roll}`).once("value", snap => {
+    const d = snap.val();
+    let details = `Score: ${d.score}/${d.total}\n`;
+    // Fetch questions to compare answers
+    firebase.database().ref(`tests/class_${cls}/${test}`).once("value", qSnap => {
+      const questions = Object.values(qSnap.val().questions || {});
+      Object.keys(d.answers || {}).forEach(i => {
+        const q = questions[i];
+        details += `Q${+i+1}: ${d.answers[i] === q.answer ? 'Correct' : 'Incorrect'}\n`;
+      });
+      alert(details);  // Or use a modal for better UX
+    });
+  });
 }
 
 function TestsForTeacher() {
@@ -1165,4 +1310,3 @@ function rejectSignup(key) {
 
 </body>
 </html>
-
