@@ -824,6 +824,16 @@ function teacherSignup() {
   btn.disabled = true;
 
   const signupData = { email, password: pass };
+  firebase.database().ref("pendingSignups").push({
+  email: email,
+  password: pass,
+  role: "teacher",
+  status: "pending",
+  createdAt: new Date().toISOString()
+}).then(() => {
+  alert("Signup request sent. Wait for admin approval.");
+});
+
   firebase.database().ref("pendingSignups").push(signupData)
     .then(() => {
       signupMsg.innerText = "Signup request submitted! Wait for admin approval.";
@@ -971,7 +981,7 @@ function saveTest() {
     return {
       q: p[0].trim(),
       options: p.slice(1, 5).map(x => x.trim()),
-      answer: Number(p[5])
+      answer: Number(p[5]) - 1
     };
   });
 
@@ -1023,7 +1033,7 @@ function startStudentTest() {
   if (!auth.currentUser) { alert("Login required"); return; }
   const cls = sClass.value;
   const test = studentTestSelect.value;
-  const roll = auth.currentUser.email;  // Use email as roll
+  const roll = auth.currentUser.uid;  // Use email as roll
   const name = auth.currentUser.displayName || auth.currentUser.email;  // Or prompt for name
 
   if (!cls || !test) {
@@ -1397,4 +1407,5 @@ function rejectSignup(key) {
 
 </body>
 </html>
+
 
