@@ -560,7 +560,7 @@ button {
       <!-- Dashboard Tab -->
       <div id="dashboard" class="tab-content active">
         <h3>Dashboard</h3>
-                <p>Welcome to the Hera MCQ System. Use the sidebar to navigate.</p>
+        <p>Welcome to the Hera MCQ System. Use the sidebar to navigate.</p>
         <div id="dashboardStats">
           <p>Loading stats...</p>
         </div>
@@ -597,8 +597,8 @@ button {
         <h3>Manage Tests</h3>
         <select id="manageClass" onchange="TestsForTeacher()">
           <option value="">Select Class</option>
-          <option value="jr_kg">Jr. KG</option>
-          <option value="sr_kg">Sr. KG</option>
+          <option value="jr_kg">Jr. KG
+                    <option value="sr_kg">Sr. KG</option>
           <option value="1">Class 1</option>
           <option value="2">Class 2</option>
           <option value="3">Class 3</option>
@@ -704,6 +704,7 @@ button {
     <button id="submitBtn" onclick="submitTest()">Submit</button>
   </div>
 </div>
+
 <script>
 firebase.initializeApp({
   apiKey: "AIzaSyBQ2-dTUTPwhf7WqceEwXpk9CtPksR1xCk",
@@ -1120,7 +1121,8 @@ function displayQuestion(index) {
   updateQuestionMap();
 }
 
-function selectOption(qIndex, optIndex) {
+function selectOption(q
+Index, optIndex) {
   studentAnswers[qIndex] = optIndex;
   displayQuestion(qIndex);
 }
@@ -1239,7 +1241,8 @@ function Results() {
 function exportResults() {
   const cls = resultClassSelect.value;
   const test = resultTestSelect.value;
-  if (!cls || !test) return alert("Select class  firebase.database().ref(`results/class_${cls}/${test}`).once("value", snap => {
+  if (!cls || !test) return alert("Select class and test");
+  firebase.database().ref(`results/class_${cls}/${test}`).once("value", snap => {
     let csv = "Name,Roll,Score,Total\n";
     snap.forEach(r => {
       const d = r.val();
@@ -1377,8 +1380,6 @@ function rejectSignup(key) {
     });
 }
 </script>
+
 </body>
 </html>
-
-
-
