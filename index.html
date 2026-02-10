@@ -1121,8 +1121,7 @@ function displayQuestion(index) {
   updateQuestionMap();
 }
 
-function selectOption(q
-Index, optIndex) {
+function selectOption(qIndex, optIndex) {
   studentAnswers[qIndex] = optIndex;
   displayQuestion(qIndex);
 }
@@ -1337,49 +1336,57 @@ function logout() {
 function loadPendingSignups() {
   const list = document.getElementById("pendingSignupsList");
   list.innerHTML = "<p>Loading...</p>";
+
   firebase.database().ref("pendingSignups").once("value", snap => {
     list.innerHTML = "";
+
     if (!snap.exists()) {
       list.innerHTML = "<p>No pending signups.</p>";
       return;
     }
+
     snap.forEach(child => {
       const data = child.val();
+      const key = child.key;
+
       list.innerHTML += `
-        <div style="border:1px solid #ccc;padding:6px;margin:5px">
-          <b>Email:</b> ${data.email}<br>
-          <button onclick="approveSignup('${child.key}', '${data.email}', '${data.password}')">Approve</button>
-          <button onclick="rejectSignup('${child.key}')">Reject</button>
+        <div style="border:1px solid #ccc;padding:10px;margin:8px;border-radius:6px">
+          <b>${data.email}</b><br>
+          Status: ${data.status}<br><br>
+          <button onclick="approveTeacher('${key}','${data.email}','${data.password}')">Approve</button>
+          <button onclick="rejectTeacher('${key}')">Reject</button>
         </div>
       `;
     });
   });
 }
 
-function approveSignup(key, email, password) {
-  if (!confirm(`Approve signup for ${email}?`)) return;
+function approveTeacher(key, email, password) {
   auth.createUserWithEmailAndPassword(email, password)
-    .then(() => {
-      firebase.database().ref(`pendingSignups/${key}`).remove();
-      firebase.database().ref(`teachers/${email.replace(/\./g, '_')}`).set({ email, approved: true });
-      alert("Signup approved and user created.");
+    .then(userCred => {
+      const teacherKey = email.replace(/\./g, "_");
+
+      firebase.database().ref("teachers/" + teacherKey).set({
+        email: email,
+        role: "teacher",
+        approvedAt: Date.now()
+      });
+
+      firebase.database().ref("pendingSignups/" + key).remove();
+      alert("Teacher approved successfully");
       loadPendingSignups();
     })
-    .catch(e => {
-      console.error("Approval failed:", e);
-      alert("Approval failed: " + e.message);
-    });
+    .catch(err => alert(err.message));
 }
 
-function rejectSignup(key) {
+function rejectTeacher(key) {
   if (!confirm("Reject this signup?")) return;
-  firebase.database().ref(`pendingSignups/${key}`).remove()
-    .then(() => {
-      alert("Signup rejected.");
-      loadPendingSignups();
-    });
+  firebase.database().ref("pendingSignups/" + key).remove();
+  loadPendingSignups();
 }
+
 </script>
 
 </body>
 </html>
+
