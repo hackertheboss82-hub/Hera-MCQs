@@ -471,7 +471,7 @@ button {
 </div>
 
 <!-- TEACHER LOGIN/SIGNUP -->
-<div class="auth-section teacher-section">
+<div class="auth-section teacher-section" id="teacherAuth">
   <div class="container" id="container">
     <!-- Orange Panel -->
     <div class="orange-panel"></div>
@@ -739,6 +739,13 @@ function toggleTheme() {
 function showRegister() {
   document.getElementById("container").classList.add("active");
 }
+function hideAllSections() {
+  document.getElementById("teacherAuth").style.display = "none";
+  document.getElementById("studentContainer").style.display = "none";
+  document.getElementById("teacherPanel").style.display = "none";
+  document.getElementById("studentPanel").style.display = "none";
+  document.getElementById("testArea").style.display = "none";
+}
 
 function showLogin() {
   document.getElementById("container").classList.remove("active");
@@ -789,15 +796,16 @@ function teacherLogin() {
     return;
   }
   try {
-    auth.signInWithEmailAndPassword(email, pass)
-      .catch(e => {
-        console.error("Login error:", e);
-        loginMsg.innerText = e.message;
-      });
-  } catch (error) {
-    console.error("Unexpected error:", error);
-  }
-}
+  auth.signInWithEmailAndPassword(email, pass)
+  .then(() => {
+    hideAllSections();
+    document.getElementById("teacherPanel").style.display = "flex";
+  })
+  .catch(e => {
+    console.error("Login error:", e);
+    loginMsg.innerText = e.message;
+  });
+
 
 /* SIGNUP */
 function teacherSignup() {
@@ -894,10 +902,14 @@ function studentLogin() {
     return;
   }
   auth.signInWithEmailAndPassword(email, pass)
-    .catch(e => {
-      studentLoginMsg.innerText = e.message;
-    });
-}
+  .then(() => {
+    hideAllSections();
+    document.getElementById("studentPanel").style.display = "block";
+  })
+  .catch(e => {
+    studentLoginMsg.innerText = e.message;
+  });
+
 
 function studentSignup() {
   const email = studentEmailSignup.value.trim();
@@ -1074,9 +1086,12 @@ function startStudentTest() {
               } else {
                 remainingTime = data.duration * 60;
               }
+hideAllSections();
+document.getElementById("testArea").style.display = "flex";
 
-              startTimer(Math.ceil(remainingTime / 60));
-              renderTest();
+startTimer(Math.ceil(remainingTime / 60));
+renderTest();
+
               document.documentElement.requestFullscreen();
               document.addEventListener('contextmenu', e => e.preventDefault());
               document.addEventListener('fullscreenchange', () => {
@@ -1389,4 +1404,5 @@ function rejectTeacher(key) {
 
 </body>
 </html>
+
 
