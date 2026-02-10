@@ -859,8 +859,8 @@ function applyAuthState(isTeacher, u) {
     }).catch(e => console.error("Firebase error:", e));
   }
   // Fixed: Check if u exists to avoid ReferenceError
-  document.querySelector('.section-toggle').style.display = (u !== null && u !== undefined) ? "none" : "block";
-}
+document.querySelector('.section-toggle').style.display = (u !== null && u !== undefined) ? "none" : "block";
+  
 function showStudentLogin() {
   document.querySelector("#studentContainer .container").classList.remove("active");
 }
@@ -1013,13 +1013,13 @@ function startStudentTest() {
   }
 
   firebase.database()
-    .ref(`results/class_${cls}/${test}/${roll}`)
-    .once("value")
-    .then(rSnap => {
-      if (rSnap.exists()) {
-        alert("Test already submitted.\nTeacher must allow reattempt.");
-        return;
-      }
+  .ref(`results/class_${cls}/${test}/${roll}`)
+  .once("value")
+  .then(rSnap => {
+    if (rSnap.exists()) {
+      alert("Test already submitted.\nTeacher must allow reattempt.");
+      return;
+    }
       // Proceed with test start (rest of function unchanged)
       currentStudent = { name, roll, class: cls };
       currentTest = test;
@@ -1070,11 +1070,17 @@ function startStudentTest() {
             });
         });
     })
-    .catch(e => {
-      console.error("Start test error:", e);  // New: Log errors
-      alert("Failed to start test: " + e.message);
-    });
-}
+   .catch(e => {
+    console.error("Check submission error:", e);
+    // If permission denied, assume not submitted and proceed (for students)
+    if (e.code === 'PERMISSION_DENIED') {
+      // Proceed with test start
+      // (Copy the rest of the function here, indented)
+    } else {
+      alert("Failed to check submission: " + e.message);
+    }
+  });
+  
 function renderTest() {
   testTitle.innerText = currentTest;
   studentPanel.style.display = "none";
@@ -1382,6 +1388,7 @@ function rejectTeacher(key) {
 
 </body>
 </html>
+
 
 
 
