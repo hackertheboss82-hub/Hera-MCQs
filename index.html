@@ -842,9 +842,10 @@ function studentSignup() {
       studentSignupMsg.innerText = e.message;  // Changed: Use signupMsg for errors
     });
 }
+
 function applyAuthState(isTeacher, u) {
   container.style.display = "none";
-  teacherPanel.style.display = isTeacher ? "flex" : "none";  // Changed "block" to "flex" to match CSS
+  teacherPanel.style.display = isTeacher ? "flex" : "none";
   studentPanel.style.display = isTeacher ? "none" : "block";
   studentContainer.style.display = "none";
   testArea.style.display = "none";
@@ -857,10 +858,9 @@ function applyAuthState(isTeacher, u) {
       dashboardStats.innerHTML = `<p>Total Tests: ${totalTests}</p>`;
     }).catch(e => console.error("Firebase error:", e));
   }
-}// Hide section-toggle when logged in to avoid confusion
-document.querySelector('.section-toggle').style.display = u ? "none" : "block";
-// Student Auth Functions
-
+  // Fixed: Check if u exists to avoid ReferenceError
+  document.querySelector('.section-toggle').style.display = (u !== null && u !== undefined) ? "none" : "block";
+}
 function showStudentLogin() {
   document.querySelector("#studentContainer .container").classList.remove("active");
 }
@@ -1004,7 +1004,7 @@ function startStudentTest() {
   if (!auth.currentUser) { alert("Login required"); return; }
   const cls = sClass.value;
   const test = studentTestSelect.value;
-  const roll = auth.currentUser.uid;  // Use UID for uniqueness
+  const roll = auth.currentUser.uid;
   const name = auth.currentUser.displayName || auth.currentUser.email;
 
   if (!cls || !test) {
@@ -1020,10 +1020,9 @@ function startStudentTest() {
         alert("Test already submitted.\nTeacher must allow reattempt.");
         return;
       }
-
+      // Proceed with test start (rest of function unchanged)
       currentStudent = { name, roll, class: cls };
       currentTest = test;
-
       firebase.database()
         .ref(`tests/class_${cls}/${test}`)
         .once("value")
@@ -1032,18 +1031,14 @@ function startStudentTest() {
             alert("Test not found");
             return;
           }
-
           const data = snap.val();
           let allQuestions = Object.values(data.questions || {});
           shuffleArray(allQuestions);
           const limit = data.limit || allQuestions.length;
           currentQuestions = allQuestions.slice(0, limit);
-
           studentAnswers = {};
           markedForReview = {};
           currentQuestionIndex = 0;
-
-          // Restore auto-saved data
           firebase.database()
             .ref(`savedTests/${roll}/${test}`)
             .once("value")
@@ -1057,12 +1052,10 @@ function startStudentTest() {
               } else {
                 remainingTime = data.duration * 60;
               }
-hideAllSections();
-document.getElementById("testArea").style.display = "flex";
-
-startTimer(Math.ceil(remainingTime / 60));
-renderTest();
-
+              hideAllSections();
+              document.getElementById("testArea").style.display = "flex";
+              startTimer(Math.ceil(remainingTime / 60));
+              renderTest();
               document.documentElement.requestFullscreen();
               document.addEventListener('contextmenu', e => e.preventDefault());
               document.addEventListener('fullscreenchange', () => {
@@ -1072,14 +1065,16 @@ renderTest();
                 if (document.hidden) alert('Tab switched!');
               });
               updateQuestionMap();
-
               clearInterval(autoSaveInterval);
               autoSaveInterval = setInterval(autoSaveAnswers, 5000);
             });
         });
+    })
+    .catch(e => {
+      console.error("Start test error:", e);  // New: Log errors
+      alert("Failed to start test: " + e.message);
     });
 }
-
 function renderTest() {
   testTitle.innerText = currentTest;
   studentPanel.style.display = "none";
@@ -1206,7 +1201,7 @@ function Results() {
     .once("value", snap => {
       resultBox.innerHTML = "";
       if (!snap.exists()) {
-        resultBox.innerHTML = "<p>No results</p>";
+        resultBox.innerHTML = "<p>No results found.</p>";  // New: Handle no data
         return;
       }
       snap.forEach(r => {
@@ -1220,6 +1215,10 @@ function Results() {
           </div>
         `;
       });
+    })
+    .catch(e => {
+      console.error("Results error:", e);  // New: Log errors
+      resultBox.innerHTML = "<p>Failed to load results: " + e.message + "</p>";
     });
 }
 
@@ -1296,15 +1295,23 @@ function editTest(cls, testName) {
   firebase.database()
     .ref(`tests/class_${cls}/${testName}`)
     .once("value", snap => {
-      if (!snap.exists()) return;
+      if (!snap.exists()) {
+        alert("Test not found or access denied.");  // New: Alert if no data
+        console.error("Edit test failed: No data for", cls, testName);  // New: Log for debugging
+        return;
+      }
       const data = snap.val();
       testClass.value = cls;
       testName.value = testName;
       testDuration.value = data.duration || "";
       questionLimit.value = data.limit || "";
-      bulkQuestions.value = Object.values(data.questions)
+      bulkQuestions.value = Object.values(data.questions || {})
         .map(q => `${q.q} | ${q.options.join(" | ")} | ${q.answer + 1}`)
         .join("\n");
+    })
+    .catch(e => {
+      console.error("Edit test error:", e);  // New: Log errors
+      alert("Failed to load test: " + e.message);
     });
 }
 
@@ -1375,5 +1382,6 @@ function rejectTeacher(key) {
 
 </body>
 </html>
+
 
 
