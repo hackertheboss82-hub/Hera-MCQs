@@ -740,7 +740,7 @@ button {
         <div id="testList"></div>
       </div>
 
-          <!-- Results Tab -->
+      <!-- Results Tab -->
       <div id="results" class="tab-content">
         <h3>Student Results</h3>
         <select id="resultClassSelect" onchange="TestsForClass(this.value)">
@@ -934,11 +934,10 @@ function teacherLogin() {
     loginMsg.innerText = "Enter email and password.";
     return;
   }
-  auth.signInWithEmailAndPassword(email, pass)
-  .then(() => {
-    hideAllSections();
-    document.getElementById("teacherPanel").style.display = "flex";
-  })
+ auth.signInWithEmailAndPassword(email, pass)
+.then(() => {
+  // UI will be handled by auth.onAuthStateChanged
+})
   .catch(e => {
     console.error("Login error:", e);
     loginMsg.innerText = e.message;
@@ -987,11 +986,12 @@ auth.onAuthStateChanged(u => {
   hideAllSections();
 
   if (!u) {
-    // ❌ Not logged in → show only auth
-    container.style.display = "block";
-    document.querySelector('.section-toggle').style.display = "flex";
-    return;
-  }
+  // Not logged in → show toggle and default to student section
+  hideAllSections();
+  document.querySelector('.section-toggle').style.display = "flex";
+  showStudentSection();  // Default to student portal
+  return;
+}
 
   const cachedIsTeacher = localStorage.getItem(`isTeacher_${u.email}`);
 
@@ -1051,10 +1051,9 @@ function studentLogin() {
     return;
   }
   auth.signInWithEmailAndPassword(email, pass)
-  .then(() => {
-    hideAllSections();
-    document.getElementById("studentPanel").style.display = "block";
-  })
+.then(() => {
+  // UI will be handled by auth.onAuthStateChanged
+})
   .catch(e => {
     studentLoginMsg.innerText = e.message;
   });
@@ -1133,38 +1132,38 @@ function saveTest() {
     const p = l.split("|");
     if (p.length !== 6) {
       alert("Invalid question format. Ensure each line is: Question | A | B | C | D | CorrectIndex");
-      return null;
-    }
-    return {
-      q: p[0].trim(),
-      options: p.slice(1, 5).map(x => x.trim()),
-      answer: Number(p[5]) - 1
-    };
-  }).filter(q => q); // Remove invalid questions
-
-  if (questions.length === 0) {
-    alert("No valid questions found.");
-    return;
+    return null;
   }
+  return {
+    q: p[0].trim(),
+    options: p.slice(1, 5).map(x => x.trim()),
+    answer: Number(p[5]) - 1
+  };
+}).filter(q => q); // Remove invalid questions
 
-  firebase.database()
-    .ref(`tests/class_${cls}/${name}`)
-    .set({
-      duration: duration,
-      limit: Math.min(limit, questions.length), // Ensure limit doesn't exceed questions
-      questions: questions
-    })
-    .then(() => {
-      alert("Test Saved with duration");
-      testName.value = "";
-      bulkQuestions.value = "";
-      testDuration.value = "";
-      questionLimit.value = "";
-    })
-    .catch(e => {
-      console.error("Save test error:", e);
-      alert("Failed to save test: " + e.message);
-    });
+if (questions.length === 0) {
+  alert("No valid questions found.");
+  return;
+}
+
+firebase.database()
+  .ref(`tests/class_${cls}/${name}`)
+  .set({
+    duration: duration,
+    limit: Math.min(limit, questions.length), // Ensure limit doesn't exceed questions
+    questions: questions
+  })
+  .then(() => {
+    alert("Test Saved with duration");
+    testName.value = "";
+    bulkQuestions.value = "";
+    testDuration.value = "";
+    questionLimit.value = "";
+  })
+  .catch(e => {
+    console.error("Save test error:", e);
+    alert("Failed to save test: " + e.message);
+  });
 }
 function autoSaveAnswers() {
   if (!currentStudent.roll || !currentTest) return;
@@ -1612,6 +1611,3 @@ function rejectTeacher(key) {
 
 </body>
 </html>
-
-
-
