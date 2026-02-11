@@ -993,39 +993,41 @@ function teacherSignup() {
     });
 }
 
-auth.onAuthStateChanged(u => {
-  hideAllSections();
+auth.onAuthStateChanged(user => {
 
-  if (!u) {
+  if (!user) {
     hideAllSections();
-    document.querySelector('.section-toggle').style.display = "flex";
+    document.querySelector(".section-toggle").style.display = "flex";
     showStudentSection();
     return;
   }
 
-  const teacherKey = u.email.replace(/\./g, "_");
-  const cachedIsTeacher = localStorage.getItem(`isTeacher_${u.email}`);
-
-  if (cachedIsTeacher !== null) {
-    console.log("Using cached role:", cachedIsTeacher);
-    applyAuthState(cachedIsTeacher === "true", u);
-    return;
-  }
+  const uid = user.uid;
 
   firebase.database()
-    .ref(`teachers/${teacherKey}`)
+    .ref("users/" + uid + "/role")
     .once("value")
-    .then(snap => {
-      const isTeacher = snap.exists();
-      console.log("Fetched role from Firebase:", isTeacher, "for", teacherKey);
-      localStorage.setItem(`isTeacher_${u.email}`, isTeacher);
-      applyAuthState(isTeacher, u);
+    .then(snapshot => {
+
+      const role = snapshot.val();
+
+      hideAllSections(); // 🔥 VERY IMPORTANT
+
+      if (role === "teacher") {
+
+        document.getElementById("teacherPanel").style.display = "flex";
+
+      } else {
+
+        document.getElementById("studentPanel").style.display = "block";
+
+      }
+
     })
     .catch(err => {
-      console.error("Role check failed:", err);
-      localStorage.setItem(`isTeacher_${u.email}`, false);
-      applyAuthState(false, u);
+      console.error("Role fetch error:", err);
     });
+
 });
 
 function applyAuthState(isTeacher, u) {
@@ -1599,15 +1601,22 @@ function loadPendingSignups() {
 }
 
 function approveTeacher(key, email, password) {
+
   auth.createUserWithEmailAndPassword(email, password)
     .then(userCred => {
-      const teacherKey = email.replace(/\./g, "_");
-      firebase.database().ref("teachers/" + teacherKey).set({
+
+      const uid = userCred.user.uid;
+
+      // Save role using UID
+      firebase.database().ref("users/" + uid).set({
         email: email,
         role: "teacher",
         approvedAt: Date.now()
       });
+
+      // Remove from pending list
       firebase.database().ref("pendingSignups/" + key).remove();
+
       alert("Teacher approved successfully");
       loadPendingSignups();
     })
@@ -1624,6 +1633,7 @@ function rejectTeacher(key) {
 
 </body>
 </html>
+
 
 
 
