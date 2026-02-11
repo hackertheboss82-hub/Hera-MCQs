@@ -1338,6 +1338,7 @@ function updateNavigationButtons() {
   document.getElementById('nextBtn').disabled = currentQuestionIndex === currentQuestions.length - 1;
 }
 
+
 function updateQuestionMap() {
   const grid = document.getElementById('questionGrid');
   grid.innerHTML = '';
@@ -1359,19 +1360,27 @@ function updateQuestionMap() {
 }
 
 function startTimer(minutes) {
-  clearInterval(timerInterval);
   remainingTime = minutes * 60;
-  updateTimerDisplay();
+
+  clearInterval(timerInterval);
+
   timerInterval = setInterval(() => {
-    remainingTime--;
-    updateTimerDisplay();
     if (remainingTime <= 0) {
       clearInterval(timerInterval);
-      alert("Time is up! Test will be submitted automatically.");
       submitTest();
+      return;
     }
+
+    remainingTime--;
+
+    const mins = Math.floor(remainingTime / 60);
+    const secs = remainingTime % 60;
+
+    document.getElementById("timerBox").innerText =
+      `Time Left: ${mins}:${secs < 10 ? "0" : ""}${secs}`;
   }, 1000);
 }
+
 
 function updateTimerDisplay() {
   const min = Math.floor(remainingTime / 60);
@@ -1380,11 +1389,13 @@ function updateTimerDisplay() {
 }
 
 function submitTest() {
-  clearInterval(autoSaveInterval);
   clearInterval(timerInterval);
+  clearInterval(autoSaveInterval);
+
   disableUnloadWarning();
 
   let score = 0;
+
   currentQuestions.forEach((q, i) => {
     if (studentAnswers[i] === q.answer) score++;
   });
@@ -1395,15 +1406,14 @@ function submitTest() {
       name: currentStudent.name,
       score: score,
       total: currentQuestions.length,
-      answers: studentAnswers,
-      time: Date.now()
+      submittedAt: new Date().toISOString()
     })
     .then(() => {
-      firebase.database()
-        .ref(`savedTests/${currentStudent.roll}/${currentTest}`)
-        .remove();
-      alert("Test submitted successfully");
+      alert(`Test Submitted!\nScore: ${score}/${currentQuestions.length}`);
       location.reload();
+    })
+    .catch(e => {
+      alert("Error submitting test: " + e.message);
     });
 }
 
@@ -1614,6 +1624,7 @@ function rejectTeacher(key) {
 
 </body>
 </html>
+
 
 
 
