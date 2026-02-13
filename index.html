@@ -994,7 +994,6 @@ function teacherSignup() {
 }
 
 auth.onAuthStateChanged(user => {
-
   if (!user) {
     hideAllSections();
     document.querySelector(".section-toggle").style.display = "flex";
@@ -1008,27 +1007,26 @@ auth.onAuthStateChanged(user => {
     .ref("users/" + uid + "/role")
     .once("value")
     .then(snapshot => {
-
       const role = snapshot.val();
 
       hideAllSections(); // 🔥 VERY IMPORTANT
 
       if (role === "teacher") {
-
+        // Set localStorage for teacher role (this was missing!)
+        localStorage.setItem(`isTeacher_${user.email}`, "true");
         document.getElementById("teacherPanel").style.display = "flex";
-
+        loadPendingSignups();  // Optional: Load approvals if needed
       } else {
-
+        // For students, ensure localStorage is not set to "true" (optional cleanup)
+        localStorage.removeItem(`isTeacher_${user.email}`);
         document.getElementById("studentPanel").style.display = "block";
-
       }
-
     })
     .catch(err => {
       console.error("Role fetch error:", err);
+      // Optional: Handle error (e.g., show login again)
     });
-
-});
+});;
 
 function applyAuthState(isTeacher, u) {
   hideAllSections();
@@ -1633,6 +1631,7 @@ function rejectTeacher(key) {
 
 </body>
 </html>
+
 
 
 
