@@ -1338,8 +1338,7 @@ function displayQuestion(index) {
 }
 
 function selectOption(qIndex, optIndex) {
-  studentAnswers[qIndex] = opt
-  Index;
+  studentAnswers[qIndex] = optIndex;
   displayQuestion(qIndex);
 }
 
@@ -1378,7 +1377,6 @@ function updateQuestionMap() {
     grid.appendChild(div);
   });
 }
-
 function startTimer(minutes) {
   remainingTime = minutes * 60;
   clearInterval(timerInterval);
@@ -1649,6 +1647,7 @@ function rejectTeacher(key) {
 </script>
 </body>
 </html>
+
 
 
 
