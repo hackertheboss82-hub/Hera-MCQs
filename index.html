@@ -1636,11 +1636,13 @@ function approveTeacher(key, email, password) {
   auth.createUserWithEmailAndPassword(email, password)
     .then(userCred => {
       const uid = userCred.user.uid;
+      // Set the role in the database (this was missing!)
       firebase.database().ref("users/" + uid).set({
         email: email,
         role: "teacher",
         approvedAt: Date.now()
       });
+      // Remove from pending list
       firebase.database().ref("pendingSignups/" + key).remove();
       alert("Teacher approved successfully");
       loadPendingSignups();
@@ -1656,6 +1658,7 @@ function rejectTeacher(key) {
 </script>
 </body>
 </html>
+
 
 
 
