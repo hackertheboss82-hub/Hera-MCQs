@@ -1359,42 +1359,44 @@
       });
   }
 
-  auth.onAuthStateChanged(user => {
-    if (!user) {
+ auth.onAuthStateChanged(user => {
+  if (!user) {
+    hideAllSections();
+    document.querySelector(".section-toggle").style.display = "flex";
+    showStudentSection();
+    return;
+  }
+  if (!user.emailVerified) {
+    alert("Please verify your email before proceeding.");
+    auth.signOut();
+    return;
+  }
+  const uid = user.uid;
+
+  firebase.database()
+    .ref("users/" + uid + "/role")
+    .once("value")
+    .then(snapshot => {
+      const role = snapshot.val();
+      console.log("User role:", role);  // Debug log
       hideAllSections();
-      document.querySelector(".section-toggle").style.display = "flex";
-      showStudentSection();
-      return;
-    }
-    if (!user.emailVerified) {
-      alert("Please verify your email before proceeding.");
-      auth.signOut();
-      return;
-    }
-    const uid = user.uid;
 
-    firebase.database()
-      .ref("users/" + uid + "/role")
-      .once("value")
-      .then(snapshot => {
-        const role = snapshot.val();
-
-        hideAllSections();
-
-        if (role === "teacher") {
-          localStorage.setItem(`isTeacher_${user.email}`, "true");
-          document.getElementById("teacherPanel").style.display = "flex";
-          loadPendingSignups();
-        } else {
-          localStorage.removeItem(`isTeacher_${user.email}`);
-          document.getElementById("studentPanel").style.display = "block";
-        }
-      })
-      .catch(err => {
-        console.error("Role fetch error:", err);
-      });
-  });
-
+      if (role === "teacher") {
+        localStorage.setItem(`isTeacher_${user.email}`, "true");
+        document.getElementById("teacherPanel").style.display = "flex";
+        loadPendingSignups();
+      } else {
+        localStorage.removeItem(`isTeacher_${user.email}`);
+        document.getElementById("studentPanel").style.display = "block";
+      }
+    })
+    .catch(err => {
+      console.error("Role fetch error:", err);
+      // Default to student if error
+      hideAllSections();
+      document.getElementById("studentPanel").style.display = "block";
+    });
+});
   function showStudentLogin() {
     document.querySelector("#studentContainer .container").classList.remove("active");
   }
@@ -2135,6 +2137,7 @@ messaging.onMessage(payload => {
 </script>
 </body>
 </html>
+
 
 
 
