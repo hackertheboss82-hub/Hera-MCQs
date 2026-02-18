@@ -887,8 +887,8 @@
         <input id="studentEmailSignup" type="email" placeholder="Email" required>
         <input id="studentPasswordSignup" type="password" placeholder="Password" required>
         <input id="studentConfirmPassword" type="password" placeholder="Confirm Password" required>
-        <button onclick="studentSignup()">Signup</button>
-        <p id="studentSignupMsg" class="success"></p>
+        <button onclick="()">Signup</button>
+        <p id="Msg" class="success"></p>
         <button class="switch-btn" onclick="showStudentLogin()">Back to Login</button>
       </div>
     </div>
@@ -1413,44 +1413,46 @@
         studentLoginMsg.innerText = e.message || "Login failed. Check credentials.";
       });
   }
-
-  function studentSignup() {
-    const name = studentName.value.trim();
-    const email = studentEmailSignup.value.trim();
-    const pass = studentPasswordSignup.value.trim();
-    const confirmPass = studentConfirmPassword.value.trim();
-    if (!name || !email || !pass || !confirmPass) {
-      studentSignupMsg.innerText = "Fill all fields.";
-      return;
-    }
-    if (pass !== confirmPass) {
-      studentSignupMsg.innerText = "Passwords do not match.";
-      return;
-    }
-    auth.createUserWithEmailAndPassword(email, pass)
-      .then((userCredential) => {
-        const user = userCredential.user;
-        user.updateProfile({displayName: name}).then(() => {
-          firebase.database().ref("users/" + user.uid).set({
-            name: name,
-            email: email,
-            role: "student"
-          });
-          user.sendEmailVerification()
-            .then(() => {
-              studentSignupMsg.innerText = "Signup successful! Check your email to verify your account.";
-              studentName.value = "";
-              studentEmailSignup.value = "";
-              studentPasswordSignup.value = "";
-              studentConfirmPassword.value = "";
-            });
-        });
-      })
-      .catch(e => {
-        studentSignupMsg.innerText = "Signup failed: " + e.message;
-      });
+function studentSignup() {
+  const name = studentName.value.trim();
+  const email = studentEmailSignup.value.trim();
+  const pass = studentPasswordSignup.value.trim();
+  const confirmPass = studentConfirmPassword.value.trim();
+  if (!name || !email || !pass || !confirmPass) {
+    studentSignupMsg.innerText = "Fill all fields.";
+    return;
   }
-
+  if (pass !== confirmPass) {
+    studentSignupMsg.innerText = "Passwords do not match.";
+    return;
+  }
+  auth.createUserWithEmailAndPassword(email, pass)
+    .then((userCredential) => {
+      const user = userCredential.user;
+      // Save to /users
+      firebase.database().ref("users/" + user.uid).set({
+        name: name,
+        email: email,
+        role: "student"
+      }).then(() => {
+        console.log("User saved to /users");
+        user.sendEmailVerification()
+          .then(() => {
+            studentSignupMsg.innerText = "Signup successful! Check your email to verify your account.";
+            studentName.value = "";
+            studentEmailSignup.value = "";
+            studentPasswordSignup.value = "";
+            studentConfirmPassword.value = "";
+          });
+      }).catch(e => {
+        console.error("Failed to save user:", e);
+        studentSignupMsg.innerText = "Signup failed: Could not save user data.";
+      });
+    })
+    .catch(e => {
+      studentSignupMsg.innerText = "Signup failed: " + e.message;
+    });
+}
   function TestsForClass(cls) {
     resultTestSelect.innerHTML = "<option value=''>Select Test</option>";
     studentTestSelect.innerHTML = "<option value=''>Select Test</option>";
@@ -2133,6 +2135,7 @@ messaging.onMessage(payload => {
 </script>
 </body>
 </html>
+
 
 
 
