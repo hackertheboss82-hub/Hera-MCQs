@@ -536,61 +536,140 @@
       font-weight: bold;
     }
 
-    .dashboard-container {
-      display: flex;
-      flex: 1;
-    }
-
-    .sidebar {
-  width: 250px;
-  background: var(--box-bg);
-  border-right: 1px solid #ccc;
-  padding: 20px 0;
+   /* Enhanced Dashboard Styles */
+.dashboard-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: linear-gradient(135deg, var(--bg-color), #e0e7ff);
 }
 
-    .sidebar ul {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-    }
+.header {
+  background: linear-gradient(135deg, var(--accent), #0056b3);
+  color: #fff;
+  padding: 20px;
+  text-align: center;
+  font-size: 28px;
+  font-weight: bold;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  animation: fadeIn 0.5s ease-in;
+}
 
-    .sidebar li {
-      padding: 15px 20px;
-      cursor: pointer;
-      border-bottom: 1px solid #eee;
-      transition: 0.3s;
-    }
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 
-    .sidebar li:hover, .sidebar li.active {
-      background: var(--accent);
-      color: #fff;
-    }
+.main-content {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+}
 
-    .main-content {
-      flex: 1;
-      padding: 20px;
-      overflow-y: auto;
-    }
+.dashboard-card {
+  background: var(--box-bg);
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  border-left: 4px solid var(--accent);
+}
 
-    .tab-content {
-      display: none;
-    }
+.dashboard-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
 
-    .tab-content.active {
-      display: block;
-    }
+.dashboard-card h3 {
+  color: var(--accent);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+}
 
-    @media (max-width: 768px) {
-      .dashboard-container {
-        flex-direction: column;
-      }
+.dashboard-card h3 i {
+  margin-right: 10px;
+}
 
-      .sidebar {
-        width: 100%;
-        border-right: none;
-        border-bottom: 1px solid #ccc;
-      }
-    }
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 15px;
+  margin-top: 15px;
+}
+
+.stat-item {
+  background: #f8f9fa;
+  padding: 15px;
+  border-radius: 8px;
+  text-align: center;
+  font-weight: bold;
+  color: var(--text-color);
+}
+
+.stat-item .number {
+  font-size: 24px;
+  color: var(--accent);
+}
+
+.quick-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.quick-actions button {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.quick-actions button:hover {
+  opacity: 0.8;
+}
+
+.notifications {
+  max-height: 200px;
+  overflow-y: auto;
+  margin-top: 15px;
+}
+
+.notification-item {
+  background: #fff3cd;
+  padding: 10px;
+  margin: 5px 0;
+  border-radius: 6px;
+  border-left: 4px solid #ffc107;
+}
+
+.chart-container {
+  margin-top: 20px;
+  height: 200px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .main-content {
+    grid-template-columns: 1fr;
+  }
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
 
     /* Improved Header & Portal Toggle */
     .section-toggle {
@@ -757,29 +836,58 @@
   </div>
 
   <!-- TEACHER PANEL -->
-  <div id="teacherPanel">
-    <div class="header">Hera MCQ System</div>
-    <div class="dashboard-container">
-      <div class="sidebar">
-        <ul>
-          <li id="tab-dashboard" onclick="showTab('dashboard')" class="active">Dashboard</li>
-          <li id="tab-createTest" onclick="showTab('createTest')">Create Test</li>
-          <li id="tab-manageTests" onclick="showTab('manageTests')">Manage Tests</li>
-          <li id="tab-results" onclick="showTab('results')">Results</li>
-          <li id="tab-approvals" onclick="showTab('approvals')">Approvals</li>
-          <li onclick="logout()">Logout</li>
-        </ul>
-      </div>
-      <div class="main-content">
-        <!-- Dashboard Tab -->
-        <div id="dashboard" class="tab-content active">
-          <h3>Dashboard</h3>
-          <p>Welcome to the Hera MCQ System. Use the sidebar to navigate.</p>
-          <div id="dashboardStats">
-            <p>Loading stats...</p>
-          </div>
-        </div>
+ <div id="dashboard" class="tab-content active">
+  <div class="dashboard-card">
+    <h3><i class="fas fa-tachometer-alt"></i> Welcome to Hera MCQ System</h3>
+    <p>Manage tests, view results, and track student progress efficiently.</p>
+  </div>
 
+  <div class="dashboard-card">
+    <h3><i class="fas fa-chart-bar"></i> Quick Stats</h3>
+    <div class="stats-grid" id="dashboardStats">
+      <div class="stat-item">
+        <div class="number" id="totalTests">0</div>
+        <div>Total Tests</div>
+      </div>
+      <div class="stat-item">
+        <div class="number" id="totalStudents">0</div>
+        <div>Total Students</div>
+      </div>
+      <div class="stat-item">
+        <div class="number" id="totalResults">0</div>
+        <div>Total Submissions</div>
+      </div>
+      <div class="stat-item">
+        <div class="number" id="avgScore">0%</div>
+        <div>Average Score</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="dashboard-card">
+    <h3><i class="fas fa-bolt"></i> Quick Actions</h3>
+    <div class="quick-actions">
+      <button onclick="showTab('createTest')"><i class="fas fa-plus"></i> Create Test</button>
+      <button onclick="showTab('results')"><i class="fas fa-list"></i> View Results</button>
+      <button onclick="exportAllResults()"><i class="fas fa-download"></i> Export All</button>
+      <button onclick="showTab('approvals')"><i class="fas fa-user-check"></i> Manage Approvals</button>
+    </div>
+  </div>
+
+  <div class="dashboard-card">
+    <h3><i class="fas fa-bell"></i> Recent Notifications</h3>
+    <div class="notifications" id="notificationsList">
+      <div class="notification-item">Loading recent activity...</div>
+    </div>
+  </div>
+
+  <div class="dashboard-card">
+    <h3><i class="fas fa-chart-line"></i> Score Analytics</h3>
+    <div class="chart-container" id="scoreChart">
+      <p>Chart will load here (requires Chart.js for full power)</p>
+    </div>
+  </div>
+</div>
         <!-- Create Test Tab -->
         <div id="createTest" class="tab-content">
           <h3>Create Test</h3>
@@ -1809,5 +1917,6 @@
   </script>
 </body>
 </html>
+
 
 
