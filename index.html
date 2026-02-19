@@ -1420,39 +1420,52 @@ function studentSignup() {
   const email = studentEmailSignup.value.trim();
   const pass = studentPasswordSignup.value.trim();
   const confirmPass = studentConfirmPassword.value.trim();
+  
   if (!name || !email || !pass || !confirmPass) {
-    studentSignupMsg.innerText = "Fill all fields.";
+    document.getElementById("studentSignupMsg").innerText = "Fill all fields.";
     return;
   }
   if (pass !== confirmPass) {
-    studentSignupMsg.innerText = "Passwords do not match.";
+    document.getElementById("studentSignupMsg").innerText = "Passwords do not match.";
     return;
   }
+  if (pass.length < 6) {
+    document.getElementById("studentSignupMsg").innerText = "Password must be at least 6 characters.";
+    return;
+  }
+  
+  // Show loading
+  document.getElementById("studentSignupMsg").innerText = "Creating account...";
+  
   auth.createUserWithEmailAndPassword(email, pass)
     .then((userCredential) => {
       const user = userCredential.user;
-      // Save to /users
-      firebase.database().ref("users/" + user.uid).set({
+      
+      // Save user to database
+      return firebase.database().ref("users/" + user.uid).set({
         name: name,
         email: email,
         role: "student"
       }).then(() => {
-        console.log("User saved to /users");
-        user.sendEmailVerification()
-          .then(() => {
-            studentSignupMsg.innerText = "Signup successful! Check your email to verify your account.";
-            studentName.value = "";
-            studentEmailSignup.value = "";
-            studentPasswordSignup.value = "";
-            studentConfirmPassword.value = "";
-          });
-      }).catch(e => {
-        console.error("Failed to save user:", e);
-        studentSignupMsg.innerText = "Signup failed: Could not save user data.";
+        // Send verification email
+        return user.sendEmailVerification();
       });
     })
-    .catch(e => {
-      studentSignupMsg.innerText = "Signup failed: " + e.message;
+    .then(() => {
+      document.getElementById("studentSignupMsg").innerText = "Account created! Check your email to verify.";
+      // Clear form
+      document.getElementById("studentName").value = "";
+      document.getElementById("studentEmailSignup").value = "";
+      document.getElementById("studentPasswordSignup").value = "";
+      document.getElementById("studentConfirmPassword").value = "";
+    })
+    .catch((e) => {
+      console.error("Signup error:", e);
+      if (e.code === "auth/email-already-in-use") {
+        document.getElementById("studentSignupMsg").innerText = "Email already exists. Use a different email.";
+      } else {
+        document.getElementById("studentSignupMsg").innerText = "Error: " + e.message;
+      }
     });
 }
   function TestsForClass(cls) {
@@ -2110,6 +2123,7 @@ function studentSignup() {
 </script>
 </body>
 </html>
+
 
 
 
