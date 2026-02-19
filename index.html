@@ -13,7 +13,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-messaging-compat.js"></script>
+ <!-- <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-messaging-compat.js"></script> -->
   <!-- <link rel="manifest" href="manifest.json"> -->
   <script>
     if ('serviceWorker' in navigator) {
@@ -2106,37 +2106,11 @@ function studentSignup() {
     });
   }
 
-  // FCM Functions
-  const messaging = firebase.messaging();
-
-  function requestNotificationPermission() {
-  Notification.requestPermission().then(permission => {
-    if (permission === 'granted') {
-      messaging.getToken({ vapidKey: 'YOUR_VAPID_KEY_HERE' })
-        .then(token => console.log('FCM Token:', token))
-        .catch(err => console.error('FCM Token error:', err));
-    }
-  });
-}
-
-messaging.onMessage(payload => {
-  console.log('Message received:', payload);
-  showNotification(payload.notification.title, payload.notification.body);
-});
-  function showNotification(title, body) {
-    const notification = document.createElement('div');
-    notification.className = 'notification-item';
-    notification.innerHTML = `<b>${title}</b>: ${body}`;
-    document.getElementById('notificationsList').prepend(notification);
-    setTimeout(() => notification.remove(), 5000);
-  }
-
-  auth.onAuthStateChanged(user => {
-    if (user) requestNotificationPermission();
-  });
+  // Notifications disabled - no service worker needed
 </script>
 </body>
 </html>
+
 
 
 
